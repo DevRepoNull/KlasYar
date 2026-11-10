@@ -48,7 +48,6 @@ export function OnboardingWizard() {
   const completeOnboarding = useSettingsStore(
     (state) => state.completeOnboarding,
   )
-  const closeOnboarding = useSettingsStore((state) => state.closeOnboarding)
   const theme = useSettingsStore((state) => state.theme)
   const setTheme = useSettingsStore((state) => state.setTheme)
   const fontFamily = useSettingsStore((state) => state.fontFamily)
