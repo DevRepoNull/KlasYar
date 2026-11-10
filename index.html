@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="کلاس‌یار — دستیار هوشمند مدیریت کلاس و یادگیری" />
+    <title>کلاس‌یار</title>
+    <link
+      rel="preload"
+      href="/fonts/Vazirmatn-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <script>
+      // پیش از رندر، تم ذخیره‌شده را اعمال می‌کنیم تا صفحه پرش نور نداشته باشد.
+      // منبع اصلی تنظیمات IndexedDB است و خواندن همگام ندارد؛ این cookie فقط
+      // یک آینه‌ی کوچک برای همین اسکریپت است.
+      (function () {
+        try {
+          var match = document.cookie.match(
+            /(?:^|;\s*)klasyar-theme=(light|dark|system)/,
+          )
+          var mode = match ? match[1] : "system"
+          var isDark =
+            mode === "dark" ||
+            (mode === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches)
+          document.documentElement.classList.toggle("dark", isDark)
+          document.documentElement.style.colorScheme = isDark
+            ? "dark"
+            : "light"
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

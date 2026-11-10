@@ -1,0 +1,171 @@
+/*
+  تنظیمات ظاهری FullCalendar با توکن‌های تم کلاس‌یار.
+  استایل‌های خود FullCalendar v6 در زمان اجرا تزریق می‌شوند؛ به همین دلیل
+  انتخابگرها با پیشوند `.klasyar-calendar` نوشته شده‌اند تا اولویت داشته باشند.
+*/
+
+.klasyar-calendar {
+  --fc-border-color: hsl(var(--border));
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: hsl(var(--muted) / 0.35);
+  --fc-neutral-text-color: hsl(var(--muted-foreground));
+  --fc-today-bg-color: hsl(var(--primary) / 0.07);
+  --fc-small-font-size: 0.72rem;
+  --fc-event-bg-color: transparent;
+  --fc-event-border-color: transparent;
+  --fc-event-text-color: hsl(var(--foreground));
+  --fc-daygrid-event-dot-width: 6px;
+}
+
+.klasyar-calendar .fc {
+  font-family: inherit;
+  color: hsl(var(--foreground));
+}
+
+.klasyar-calendar .fc-theme-standard .fc-scrollgrid,
+.klasyar-calendar .fc-theme-standard td,
+.klasyar-calendar .fc-theme-standard th {
+  border-color: hsl(var(--border) / 0.75);
+}
+
+.klasyar-calendar .fc-theme-standard th {
+  background: hsl(var(--muted) / 0.35);
+  padding: 0.5rem 0;
+  font-weight: 600;
+}
+
+.klasyar-calendar .fc-col-header-cell-cushion {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.klasyar-calendar .fc-daygrid-day-frame {
+  min-height: 6.5rem;
+}
+
+.klasyar-calendar .fc-daygrid-day-top {
+  flex-direction: row;
+}
+
+.klasyar-calendar .fc-daygrid-day-number {
+  padding: 0.4rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: hsl(var(--foreground));
+}
+
+.klasyar-calendar .fc-daygrid-day-events {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.25rem;
+  margin: 0 0.3rem 0.35rem;
+  min-height: 0;
+}
+
+.klasyar-calendar .fc-daygrid-event-harness {
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+}
+
+.klasyar-calendar .fc-daygrid-event,
+.klasyar-calendar .fc-daygrid-block-event {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  white-space: normal;
+  overflow: visible;
+}
+
+.klasyar-calendar .fc-daygrid-event .fc-event-main {
+  padding: 0;
+  color: inherit;
+}
+
+.klasyar-calendar .fc-daygrid-day.fc-day-today {
+  background: hsl(var(--primary) / 0.06);
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-selected {
+  background: hsl(var(--primary) / 0.12);
+  box-shadow: inset 0 0 0 1.5px hsl(var(--primary) / 0.55);
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-selected .fc-daygrid-day-number {
+  color: hsl(var(--primary));
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-other-month {
+  background: hsl(var(--muted) / 0.18);
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-other-month .fc-daygrid-day-number {
+  color: hsl(var(--muted-foreground) / 0.7);
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-other-month .kl-session-chip {
+  opacity: 0.7;
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-weekend .fc-daygrid-day-number {
+  color: hsl(var(--muted-foreground));
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-holiday {
+  background: hsl(var(--destructive) / 0.06);
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-holiday .fc-daygrid-day-number {
+  color: hsl(var(--destructive));
+}
+
+.klasyar-calendar .fc-daygrid-day.kl-holiday.kl-selected {
+  background: hsl(var(--destructive) / 0.12);
+  box-shadow: inset 0 0 0 1.5px hsl(var(--destructive) / 0.5);
+}
+
+.klasyar-calendar .fc-col-header-cell.kl-header-weekend .fc-col-header-cell-cushion {
+  color: hsl(var(--destructive) / 0.85);
+}
+
+.klasyar-calendar .fc-daygrid-day:hover {
+  background: hsl(var(--accent) / 0.5);
+  cursor: pointer;
+}
+
+.klasyar-calendar .fc-scroller {
+  overflow: visible !important;
+}
+
+@media (max-width: 639px) {
+  .klasyar-calendar .fc-daygrid-day-frame {
+    min-height: 4.75rem;
+  }
+
+  .klasyar-calendar .fc-daygrid-day-number {
+    padding: 0.3rem;
+    font-size: 0.7rem;
+  }
+
+  .klasyar-calendar .fc-daygrid-day-events {
+    margin: 0 0.2rem 0.25rem;
+    gap: 0.15rem;
+  }
+
+  .klasyar-calendar .fc-col-header-cell-cushion {
+    padding: 0.2rem;
+    font-size: 0.65rem;
+  }
+
+  .klasyar-calendar .kl-session-chip {
+    font-size: 0.6rem;
+    padding: 0.05rem 0.25rem;
+  }
+
+  .klasyar-calendar .kl-session-chip .kl-chip-title {
+    display: none;
+  }
+}
