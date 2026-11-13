@@ -16,6 +16,7 @@
    - [گام ۳: دستیابی به داده‌های واکنشی با `useLiveQuery`](#گام-۳-دستیابی-به-دادههای-واکنشی-با-uselivequery)
    - [گام ۴: کوئری‌های پیشرفته و جوین سه‌گانه در حافظه](#گام-۴-کوئریهای-پیشرفته-و-جوین-سهگانه-در-حافظه)
    - [گام ۵: پشتیبان‌گیری و بازیابی داده‌ها (Backup & Restore)](#گام-۵-پشتیبانگیری-و-بازیابی-دادهها-backup--restore)
+   - [گام ۶: مهاجرت اسکیمای دیتابیس (Schema Migrations) در به‌روزرسانی‌های آینده](#گام-۶-مهاجرت-اسکیمای-دیتابیس-schema-migrations-در-بهروزرسانیهای-آینده)
 4. [لینک به فایل‌های واقعی پروژه](#۴-لینک-به-فایلهای-واقعی-پروژه)
 5. [جمع‌بندی و نکات کلیدی](#۵-جمعبندی-و-نکات-کلیدی)
 
@@ -78,7 +79,7 @@ flowchart LR
 import Dexie, { type Table } from "dexie"
 
 export const DB_NAME = "klasyar"
-export const DB_VERSION = 1
+export const DB_VERSION = 2
 
 export interface ClassDefinition {
   id: string
@@ -112,22 +113,36 @@ export interface Attendance {
   status: AttendanceStatus
 }
 
+export interface User {
+  id: number
+  username: string
+  passwordHash: string
+  createdAt: string
+}
+
 export class KlasYarDatabase extends Dexie {
   classDefinitions!: Table<ClassDefinition, string>
   sessions!: Table<Session, string>
   attendance!: Table<Attendance, string>
   settings!: Table<Setting, string>
+  users!: Table<User, number>
 
   constructor(name: string = DB_NAME) {
     super(name)
 
-    this.version(DB_VERSION).stores({
+    // نسخه ۱ (جداول پایه سیستم)
+    this.version(1).stores({
       classDefinitions: "id, title, createdAt, updatedAt",
       // ایندکس ترکیبی [definitionId+date] برای جستجوی سریع جلسات بر اساس کلاس و تاریخ
       sessions: "id, definitionId, date, [definitionId+date], status",
       // علامت & نشانگر Unique Index است: مسدودسازی ثبت تکراری حضور یک دانش‌آموز در یک جلسه
       attendance: "id, sessionId, studentId, status, &[sessionId+studentId]",
       settings: "key",
+    })
+
+    // نسخه ۲ (افزودن جدول کاربران و احراز هویت بدون حذف داده‌های نسخه ۱)
+    this.version(2).stores({
+      users: "id, username",
     })
   }
 }
@@ -321,6 +336,46 @@ export async function restoreDatabaseFromJson(file: File): Promise<void> {
 ```
 
 این متدها کل جداول، ایندکس‌ها و مقادیر را به صورت یک فایل استاندارد JSON تبدیل یا بازگردانی می‌کنند.
+
+---
+
+### گام ۶: مهاجرت اسکیمای دیتابیس (Schema Migrations) در به‌روزرسانی‌های آینده
+
+یکی از مهم‌ترین چالش‌های مهندسی وب در اپلیکیشن‌های Local-First این است:  
+> **«وقتی کاربر ده‌ها کلاس و صدها دانش‌آموز ثبت کرده و چند ماه بعد نسخه جدیدی از برنامه با جداول تازه منتشر می‌شود، چگونه اسکیما ارتقا پیدا می‌کند بدون اینکه داده‌ها پاک شوند؟»**
+
+در Dexie.js هرگز نباید تعاریف متدهای `version(1)` قبلی را دستکاری یا بازنویسی کنید. در کلاس‌یار، هنگامی که قابلیت احراز هویت محلی در نسخه ۰.۳.۰ اضافه شد، به جای تغییر نسخه ۱، نسخه ۲ را تعریف کردیم:
+
+```typescript
+// نسخه اولیه در زمان انتشار پروژه
+this.version(1).stores({
+  classDefinitions: "id, title, createdAt, updatedAt",
+  sessions: "id, definitionId, date, [definitionId+date], status",
+  attendance: "id, sessionId, studentId, status, &[sessionId+studentId]",
+  settings: "key",
+})
+
+// نسخه جدید در آپدیت‌های بعدی
+this.version(2).stores({
+  users: "id, username",
+})
+```
+
+#### نحوه عملکرد مهاجرت خودکار:
+1. مرورگر کاربر نسخه فعلی را می‌خواند (مثلاً نسخه ۱).
+2. تشخیص می‌دهد که کد جدید انتظار نسخه ۲ را دارد.
+3. تراکنش سیستمی ارتقا (Upgrade Transaction) را اجرا کرده و جدول جدید `users` را به دیتابیس بدون دست زدن به جداول قبلی اضافه می‌کند.
+4. اگر در آینده نیاز به تغییر ساختار داده‌ها باشد (مثلاً افزودن یک فیلد به تمام جلسات موجود)، متد `.upgrade(async tx => ...)` به صورت اتمیک اجرا شده و داده‌ها را ارتقا می‌دهد:
+
+```typescript
+this.version(3).stores({
+  sessions: "id, definitionId, date, [definitionId+date], status, room",
+}).upgrade(async tx => {
+  await tx.table("sessions").toCollection().modify(session => {
+    if (!session.room) session.room = "کلاس عمومی"
+  })
+})
+```
 
 ---
 

@@ -18,8 +18,10 @@
 10. [اسکریپت‌های پروژه (NPM Scripts)](#۱۰-اسکریپتهای-پروژه-npm-scripts)
 11. [راهنمای گام‌به‌گام افزودن یک ویژگی جدید](#۱۱-راهنمای-گامبهگام-افزودن-یک-ویژگی-جدید)
 12. [راهنمای گام‌به‌گام افزودن یک نوع خروجی جدید](#۱۲-راهنمای-گامبهگام-افزودن-یک-نوع-خروجی-جدید)
-13. [قراردادها و استانداردهای کدنویسی (Code Conventions)](#۱۳-قراردادها-و-استانداردهای-کدنویسی-code-conventions)
-14. [پیوندها و مستندات تکمیلی](#۱۴-پیوندها-و-مستندات-تکمیلی)
+13. [استراتژی ارتقا، توسعه در مقیاس بالا و میگریشن دیتابیس (Database Migrations & Scaling)](#۱۳-استراتژی-ارتقا-توسعه-در-مقیاس-بالا-و-میگریشن-دیتابیس-database-migrations--scaling)
+14. [معماری امنیت و احراز هویت محلی (Local-First Authentication)](#۱۴-معماری-امنیت-و-احراز-هویت-محلی-local-first-authentication)
+15. [قراردادها و استانداردهای کدنویسی (Code Conventions)](#۱۵-قراردادها-و-استانداردهای-کدنویسی-code-conventions)
+16. [پیوندها و مستندات تکمیلی](#۱۶-پیوندها-و-مستندات-تکمیلی)
 
 ---
 
@@ -43,10 +45,12 @@
 | **FullCalendar** | `6.1.22` | موتور رندر تقویم ماهانه و تعامل با ایونت‌ها | [fullcalendar.io](https://fullcalendar.io) |
 | **jalaali-js** | `2.0.1` | محاسبات تقویم دقیق هجری شمسی و تبدیل میلادی-جلالی | [github.com/jalaali/jalaali-js](https://github.com/jalaali/jalaali-js) |
 | **SheetJS (xlsx)** | `0.18.5` | تولید فایل‌های اکسل ساختاریافته چندبرگی با جهت RTL | [sheetjs.com](https://sheetjs.com) |
+| **xlsx-js-style** | `1.2.0` | استایل‌دهی سلول‌ها، حاشیه‌ها و رنگ‌بندی سازمانی شیت‌های اکسل | [npmjs.com/package/xlsx-js-style](https://www.npmjs.com/package/xlsx-js-style) |
 | **html2pdf.js** | `0.14.0` | رندر اسناد HTML با فونت وزیرمتن به فایل وکتوری/کانواس PDF | [ekoopmans.github.io/html2pdf.js](https://ekoopmans.github.io/html2pdf.js) |
 | **docx** | `9.15.3` | ساخت پویای اسناد مایکروسافت ورد (.docx) بدون نیاز به Office | [docx.js.org](https://docx.js.org) |
+| **Web Crypto API** | Native | احراز هویت محلی با رمزنگاری PBKDF2 و هش SHA-256 و Salt رندوم | [w3.org/TR/WebCryptoAPI](https://www.w3.org/TR/WebCryptoAPI/) |
 | **react-hot-toast** | `2.6.1` | نمایش اعلان‌های اطلاع‌رسانی، موفقیت و خطاهای پایگاه داده | [react-hot-toast.com](https://react-hot-toast.com) |
-| **Vitest** | `2.1.9` | موتور مدرن اجرای تست‌های واحد فوق‌سریع هماهنگ با Vite | [vitest.dev](https://vitest.dev) |
+| **Vitest** | `2.1.9` | موتور مدرن اجرای تست‌های واحد فوق‌سریع هماهنگ با Vite (۸۳ آزمون پاس‌شده) | [vitest.dev](https://vitest.dev) |
 
 ---
 
@@ -66,7 +70,8 @@ klasyar/
 │   │   ├── app-link.tsx          # لینک‌های SPA بدون بارگذاری مجدد صفحه
 │   │   ├── attendance/           # دیالوگ‌ها و مؤلفه‌های حضور و غیاب
 │   │   │   ├── attendance-constants.ts   # برچسب‌ها و رنگ‌های وضعیت حضور
-│   │   │   └── session-attendance-dialog.tsx # فرم ثبت حضور شاگردان در جلسه
+│   │   │   ├── attendance-matrix.tsx     # ماتریس لمسی ثبت حضور برای دسکتاپ و کارت‌های موبایل
+│   │   │   └── session-attendance-dialog.tsx # فرم ثبت حضور شاگردان در جلسه (با رفع Rules of Hooks)
 │   │   ├── calendar/             # ماژول تقویم و رویدادهای ماهانه
 │   │   │   ├── calendar.css      # سفارشی‌سازی استایل‌های FullCalendar برای RTL
 │   │   │   ├── session-chip.tsx  # چیپ گرافیکی جلسه روی خانه‌های تقویم
@@ -78,29 +83,37 @@ klasyar/
 │   │   │   ├── class-palette.ts  # پالت رنگی استاندارد برای تگ کلاس‌ها
 │   │   │   └── delete-class-dialog.tsx   # تاییدیه حذف آبشاری کلاس و جلسات
 │   │   ├── layout/               # قالب کلی و پیمایش
-│   │   │   ├── AppLayout.tsx     # لایه‌بندی کلی، سایدبار دسکتاپ و منوی موبایل
+│   │   │   ├── AppFooter.tsx     # پاورقی سازمانی نمایش وضعیت محلی و نسخه
+│   │   │   ├── AppLayout.tsx     # لایه‌بندی کلی، سایدبار دسکتاپ، منوی موبایل و هدر
 │   │   │   └── nav-items.ts      # منوهای پیمایش و آیکون‌های متناظر
 │   │   ├── onboarding/           # ماژول راهنمای تعاملی و آنبوردینگ کاربر
 │   │   │   └── onboarding-wizard.tsx     # ویزارد خوش‌آمدگویی و راه‌اندازی اولیه
 │   │   ├── sessions/             # مدیریت متمرکز فهرست جلسات
-│   │   │   └── session-form-dialog.tsx   # فرم افزودن و ویرایش جلسات
+│   │   │   └── session-form-dialog.tsx   # فرم افزودن و ویرایش جلسات با تایم‌پیکر نوین
 │   │   ├── settings/             # مؤلفه‌های بخش تنظیمات
+│   │   │   ├── account-profile-tab.tsx   # مدیریت حساب کاربری ادمین، تغییر رمز و خروج
+│   │   │   ├── color-theme-picker.tsx    # انتخابگر بلادرنگ پالت‌های ۴گانه لوکس
 │   │   │   ├── restore-backup-dialog.tsx # بررسی صحت و بازگردانی فایل JSON
 │   │   │   ├── settings-section.tsx      # کارت‌های ساختاریافته تنظیمات
 │   │   │   └── theme-mode-switch.tsx     # دکمه انتخاب حالت تیره، روشن یا سیستم
 │   │   └── ui/                   # مؤلفه‌های پایه طراحی بر مبنای Radix UI
+│   │       ├── aurora-background.tsx     # پس‌زمینه ارگانیک شفق قطبی متصل به تم
 │   │       ├── badge.tsx         # نشان‌ها و برچسب‌های رنگی
-│   │       ├── button.tsx        # دکمه با واریانت‌های بصری متعدد
-│   │       ├── card.tsx          # کانتینرهای پنلی
-│   │       ├── dialog.tsx        # پنجره‌های مدال دسترسی‌پذیر
+│   │       ├── button.tsx        # دکمه با واریانت‌های بصری و افکت درخشش (.glow-effect)
+│   │       ├── card.tsx          # کانتینرهای پنلی Glassmorphism
+│   │       ├── dialog.tsx        # پنجره‌های مدال دسترسی‌پذیر و پورتال‌های ایمن
+│   │       ├── error-boundary.tsx # مرزبندی هوشمند برای مهار خطاهای رندر UI
 │   │       ├── input.tsx         # فیلد ورودی متن
+│   │       ├── jalali-date-picker.tsx # تقویم جلالی با انتخابگر سریع سال و ماه
+│   │       ├── preloader.tsx     # نشانگر پیش‌بارگذاری روان
 │   │       ├── select.tsx        # دراپ‌داون‌های انتخاب تک‌گزینه‌ای
 │   │       ├── switch.tsx        # تاگل‌سوئیچ‌های روشن/خاموش
 │   │       ├── tabs.tsx          # زبانه‌های جابه‌جایی تب
+│   │       ├── time-picker.tsx   # زمان‌سنج نوین با انیمیشن و پری‌ست‌های سریع
 │   │       ├── toast.tsx / toaster.tsx # سیستم اعلان‌های Radix
 │   │       └── tooltip.tsx       # راهنماهای شناور موس
 │   ├── db/                       # لایه پایگاه داده محلی (Dexie / IndexedDB)
-│   │   ├── schema.ts             # اسکیمای کامل جداول، ایندکس‌ها، تایپ‌ها و نرمال‌سازی
+│   │   ├── schema.ts             # اسکیمای کامل دیتابیس (نسخه ۲)، ایندکس‌ها و تایپ‌ها
 │   │   ├── classDefinitions.ts   # توابع CRUD و منطق کلاس‌ها و شاگردان
 │   │   ├── sessions.ts           # توابع CRUD جلسات، اعتبارسنجی تداخل و سقف
 │   │   ├── attendance.ts         # مدیریت رکوردهای حضور، ماتریس غیبت و آمار
@@ -113,7 +126,9 @@ klasyar/
 │   │   ├── use-toast.ts          # ارسال پیام‌های آنی به کاربر
 │   │   └── use-settings.ts       # دسترسی سریع به تنظیمات پیکربندی‌شده
 │   ├── lib/                      # ابزارها و توابع کمکی کاربردی
+│   │   ├── auth.ts               # رمزنگاری PBKDF2/SHA-256 و اعتبارسنجی نشست محلی
 │   │   ├── backup.ts             # تولید فایل بکاپ امن JSON و اعتبارسنجی آن
+│   │   ├── color-theme.ts        # مدیریت پالت‌های ۴ رنگ و تزریق متغیرهای CSS
 │   │   ├── date.ts               # ابزارهای عمومی تاریخ
 │   │   ├── font.ts               # بارگذاری و کش فونت وزیرمتن برای PDF
 │   │   ├── idbStorage.ts         # درایور ذخیره‌سازی سفارشی Zustand در IndexedDB
@@ -125,25 +140,38 @@ klasyar/
 │   │   ├── utils.ts              # ابزار ادغام کلاس‌های Tailwind (cn / clsx / twMerge)
 │   │   └── reports/              # موتور پردازش و صدور انواع خروجی
 │   │       ├── data-builder.ts   # تجمیع داده‌ها، شاخص‌های KPI و ماتریس ماهانه
-│   │       ├── export-excel.ts   # صدور گزارش به فرمت اکسل (XLSX)
+│   │       ├── export-excel.ts   # صدور گزارش به فرمت اکسل استایل‌دار (xlsx-js-style)
 │   │       ├── export-pdf.ts     # صدور گرافیکی گزارش به PDF با فونت وزیرمتن
 │   │       ├── export-word.ts    # صدور گزارش رسمی به فرمت مایکروسافت ورد (DOCX)
 │   │       ├── export-backup.ts  # پشتیبان‌گیری سریع
 │   │       └── types.ts          # تایپ‌های مرتبط با گزارش‌ها و خروجی‌ها
 │   ├── pages/                    # ویوهای اصلی نرم‌افزار
-│   │   ├── calendar-page.tsx     # نمای ماهانه تقویم و تعامل روزها
+│   │   ├── auth-page.tsx         # صفحه خوش‌آمدگویی، ورود و قفل برنامه
+│   │   ├── calendar-page.tsx     # نمای ماهانه تقویم با انتخابگر سال/ماه شمسی
 │   │   ├── classes-page.tsx      # فهرست کارت‌های کلاس و افزودن کلاس جدید
-│   │   ├── sessions-page.tsx     # جدول فیلترپذیر تمام جلسات با قابلیت سرچ
+│   │   ├── sessions-page.tsx     # جدول فیلترپذیر تمام جلسات با فیلتر بازه تاریخ جلالی
 │   │   ├── attendance-page.tsx   # ماتریس ماهانه حضور شاگردان و ثبت وضعیت
 │   │   ├── reports-page.tsx      # داشبورد آماری، نمودار حضور و صدور فایل‌ها
-│   │   ├── settings-page.tsx     # پیکربندی تم، اعلان‌ها، پشتیبان‌گیری و ریست داده
+│   │   ├── settings-page.tsx     # پیکربندی تم، رنگ‌ها، امنیت، اعلان‌ها و پشتیبان
 │   │   ├── help-page.tsx         # صفحه راهنما، آموزش و کلیدهای میان‌بر
 │   │   └── placeholder-pages.tsx # صفحات موقت و پیام‌های راهنما
 │   ├── store/                    # مدیریت استیت کلاینت با Zustand
+│   │   ├── authStore.ts          # استور وضعیت احراز هویت و قفل کاربر
 │   │   └── settingsStore.ts      # استور تنظیمات کاربر متصل به IndexedDB
-│   ├── test/                     # آزمون‌های واحد خودکار با Vitest
-│   │   ├── pure-logic.test.ts    # تست‌های جامع همپوشانی، سقف، درصدها و مدت
-│   │   └── help-onboarding.test.ts # تست‌های عملکردی بخش راهنما و ویزارد
+│   ├── test/                     # آزمون‌های واحد و یکپارچگی با Vitest (۸۳ تست)
+│   │   ├── app-footer.test.ts
+│   │   ├── attendance-error-boundary.test.ts
+│   │   ├── aurora-glow.test.ts
+│   │   ├── color-theme.test.ts
+│   │   ├── help-onboarding.test.ts
+│   │   ├── help-search-qa.test.ts
+│   │   ├── local-auth.test.ts
+│   │   ├── pure-logic.test.ts
+│   │   ├── reports-export-style.test.ts
+│   │   ├── reports-filter.test.ts
+│   │   ├── responsive-qa.test.ts
+│   │   ├── rtl-layout-qa.test.ts
+│   │   └── session-improvements-qa.test.ts
 │   ├── App.tsx                   # کامپوننت ریشه، ارائه‌دهنده قالب و روتر
 │   ├── index.css                 # توکن‌های رنگی HSL برای حالت روشن و تیره
 │   └── main.tsx                  # نقطه ورود اپلیکیشن و اتصال به DOM
@@ -230,11 +258,17 @@ erDiagram
 تعریف اسکیمای دیتابیس در فایل [`src/db/schema.ts`](../src/db/schema.ts) قرار دارد:
 
 ```typescript
+export const DB_VERSION = 2
+
 this.version(1).stores({
   classDefinitions: "id, title, createdAt, updatedAt",
   sessions: "id, definitionId, date, [definitionId+date], status",
   attendance: "id, sessionId, studentId, status, &[sessionId+studentId]",
   settings: "key",
+})
+
+this.version(2).stores({
+  users: "id, username",
 })
 ```
 
@@ -260,6 +294,11 @@ this.version(1).stores({
 #### ۴. جدول `settings` (تنظیمات سراسری)
 - **کلید اصلی:** `key`
 - نگهداری کلید-مقدارهای متفرقه و پایداری استور تنظیمات.
+
+#### ۵. جدول `users` (احراز هویت ادمین محلی)
+- **کلید اصلی:** `id`
+- **ایندکس‌ها:** `username`
+- نگهداری هش رمز عبور تولیدشده با الگوریتم **PBKDF2**، سالت تصادفی و فراداده‌های امنیتی برای محافظت از داده‌های معلمان.
 
 ---
 
@@ -395,9 +434,9 @@ flowchart LR
     F --> J["فایل .json پشتیبان با قابلیت Restore"]
 ```
 
-### ۱. خروجی اکسل (`export-excel.ts`)
-- **ابزار:** `xlsx` (SheetJS)
-- **ویژگی‌ها:** دو شیت مجزا؛ شیت اول فهرست کامل و جزئیات تمام جلسات ماه با ستون‌های عرض‌بندی‌شده، و شیت دوم خلاصه شاخص‌های عملکرد (KPI)، ساعت تدریس، تعداد جلسات به تفکیک کلاس و درصد حضور کل. هر دو شیت با پرچم `{ RTL: true }` تنظیم می‌شوند.
+### ۱. خروجی اکسل استایل‌دار (`export-excel.ts`)
+- **ابزار:** `xlsx` و `xlsx-js-style`
+- **ویژگی‌ها:** دو شیت مجزا با جهت کامل راست‌به‌چپ (`{ RTL: true }`)؛ شیت اول شامل فهرست تفصیلی تمام جلسات ماه با استایل‌دهی سلول‌ها (هدرهای رنگی با پس‌زمینه اختصاصی، فونت بولد، بردرهای سلولی و ستون‌های با عرض خودکار). شیت دوم شامل کارت‌های KPI، مجموع ساعات تدریس، ساعات مفید و ماتریس حضور کلاسی.
 
 ### ۲. خروجی پی‌دی‌اف (`export-pdf.ts`)
 - **ابزار:** `html2pdf.js`
@@ -409,32 +448,39 @@ flowchart LR
 
 ### ۴. خروجی پشتیبان دیتابیس (`backup.ts`)
 - **ابزار:** `dexie-export-import`
-- **ویژگی‌ها:** تجمیع کامل رکوردهای چهار جدول به همراه نسخه‌ی اسکیما (`schemaVersion`) و فراداده‌های اعتبارسنجی که قابلیت بررسی ساختار پیش از بازگردانی (Restore) را دارند.
+- **ویژگی‌ها:** تجمیع کامل رکوردهای تمام جداول (شامل نسخه اسکیما، کلاس‌ها، جلسات، حضور و غیاب، تنظیمات و کاربران) به همراه فراداده‌های اعتبارسنجی جهت اطمینان از سلامت فایل پیش از بازگردانی (Restore).
 
 ---
 
 ## ۹. استراتژی تست و تضمین کیفیت (Testing)
 
-کلاس‌یار از **Vitest** به عنوان رانر مدرن تست‌های خود استفاده می‌کند. تمرکز تست‌ها روی توابع منطق خالص (Pure Logic) بدون وابستگی به محیط مرورگر یا DOM است.
+کلاس‌یار از **Vitest** به عنوان رانر مدرن تست‌های خود استفاده می‌کند. پوشش تست‌های پروژه شامل **۸۳ آزمون خودکار در ۱۳ فایل آزمایشی** است که در کمتر از ۲.۵ ثانیه اجرا می‌شوند:
 
-### ساختار تست‌ها
-فایل آزمون‌ها در مسیر [`src/test/pure-logic.test.ts`](../src/test/pure-logic.test.ts) قرار دارد و موارد زیر را به طور دقیق پوشش می‌دهد:
+```
+✓ src/test/rtl-layout-qa.test.ts (8 tests)
+✓ src/test/pure-logic.test.ts (20 tests)
+✓ src/test/session-improvements-qa.test.ts (3 tests)
+✓ src/test/color-theme.test.ts (5 tests)
+✓ src/test/aurora-glow.test.ts (3 tests)
+✓ src/test/reports-filter.test.ts (7 tests)
+✓ src/test/help-onboarding.test.ts (8 tests)
+✓ src/test/local-auth.test.ts (12 tests)
+✓ src/test/attendance-error-boundary.test.ts (6 tests)
+✓ src/test/responsive-qa.test.ts (4 tests)
+✓ src/test/reports-export-style.test.ts (3 tests)
+✓ src/test/help-search-qa.test.ts (2 tests)
+✓ src/test/app-footer.test.ts (2 tests)
+```
 
-1. **محاسبه مدت زمان جلسات:**
-   - زمان‌های نرمال (مثلاً `16:00` تا `17:30` برابر با ۹۰ دقیقه).
-   - ساعت‌های یکسان (`10:00` تا `10:00` برابر با ۰ دقیقه).
-   - زمان‌های معکوس یا نامعتبر (جلوگیری از اعداد منفی).
-2. **اعتبارسنجی سقف جلسات کلاس:**
-   - مجاز بودن ثبت وقتی شمارنده کمتر از کل است.
-   - رد عملیات در لحظه رسیدن به سقف (`count === total`).
-   - محافظت در برابر مقادیر غیرعادی سرریز (Overflow).
-3. **همپوشانی بازه‌های زمانی:**
-   - تداخل کامل یا جزئی دو بازه.
-   - اجازه به جلسات پشت‌سرهم (مانند `10:00-11:30` و `11:30-13:00`).
-4. **محاسبه درصد حضور و غیاب:**
-   - حضور کامل (۱۰۰٪)، محاسبه تأخیر، مرخصی موجه، غیبت، و مدیریت مخرج صفر (`null`).
+### حوزه‌های تحت پوشش آزمون‌ها:
+1. **منطق خالص محاسباتی (`pure-logic.test.ts`):** محاسبه مدت جلسات، همپوشانی، سقف ظرفیت، درصد حضور و غیاب.
+2. **احراز هویت محلی (`local-auth.test.ts`):** صحت هش‌کردن گذرواژه با PBKDF2، یکتایی سالت تصادفی، اعتبارسنجی نشست‌ها و مهار تلاش‌های نفوذ.
+3. **پالت‌های رنگی و جلوه‌های بصری (`color-theme.test.ts`, `aurora-glow.test.ts`):** صحت اعمال کلاس‌ها و متغیرهای ۴ تم رنگی.
+4. **فیلترها و استایل گزارش‌ها (`reports-filter.test.ts`, `reports-export-style.test.ts`):** فیلتر بازه تاریخ جلالی و صحت استایل‌های خروجی اکسل/پی‌دی‌اف.
+5. **چیدمان RTL و ریسپانسیو (`rtl-layout-qa.test.ts`, `responsive-qa.test.ts`):** بررسی عدم شکستگی در موبایل و دسکتاپ.
+6. **مرزبندی خطا و پایداری حضور و غیاب (`attendance-error-boundary.test.ts`, `session-improvements-qa.test.ts`):** سلامت هوک‌های ری‌اکت و عدم کرش صفحه.
 
-### اجرای تست‌ها
+### اجرای تست‌ها:
 ```bash
 # اجرای یک‌باره تمامی تست‌ها
 npm test
@@ -596,7 +642,73 @@ export * from "./export-csv"
 
 ---
 
-## ۱۳. قراردادها و استانداردهای کدنویسی (Code Conventions)
+## ۱۳. استراتژی ارتقا، توسعه در مقیاس بالا و میگریشن دیتابیس (Database Migrations & Scaling)
+
+> **💡 چشم‌انداز توسعه:**  
+> اگر پروژه در آینده هزاران کاربر فعال روزانه پیدا کند و تیم توسعه مرتباً نسخه‌های جدید (v0.4.0، v0.5.0، v1.0.0 و ...) با جداول یا ستون‌های تازه منتشر کند، نحوه مدیریت پایگاه‌داده بسیار حیاتی است تا هیچ رکوردی از کاربران پاک نشود.
+
+### اصول بنیادین مهاجرت اسکیمای دیتابیس در Dexie.js:
+1. **قانون نسخه‌بندی افزایشی (Incremental Versioning):**  
+   در فایل [`src/db/schema.ts`](../src/db/schema.ts)، شماره نسخه فعلی با ثابت `export const DB_VERSION = 2` مشخص شده است. هرگز تعریف نسخه‌های قبلی را ویرایش یا پاک نکنید! اگر ویژگی جدیدی نیاز به جدول یا ایندکس دارد، شماره نسخه را افزایش داده و بلوک جدید اضافه نمایید:
+
+```typescript
+// گام ۱: افزایش مقدار نسخه سراسری
+export const DB_VERSION = 3
+
+// گام ۲: نگه‌داشتن کدهای نسخه ۱ و ۲ دست‌نخورده
+this.version(1).stores({
+  classDefinitions: "id, title, createdAt, updatedAt",
+  sessions: "id, definitionId, date, [definitionId+date], status",
+  attendance: "id, sessionId, studentId, status, &[sessionId+studentId]",
+  settings: "key",
+})
+
+this.version(2).stores({
+  users: "id, username",
+})
+
+// گام ۳: افزودن نسخه ۳ جدید برای جدول یا ایندکس‌های تازه
+this.version(3).stores({
+  notifications: "id, date, readStatus", // جدول جدید
+  sessions: "id, definitionId, date, [definitionId+date], status, room", // افزودن ایندکس room
+}).upgrade(async tx => {
+  // در صورت نیاز به مقداردهی اولیه یا تبدیل داده‌های قبلی:
+  await tx.table("sessions").toCollection().modify(session => {
+    if (!session.room) session.room = "عمومی"
+  })
+})
+```
+
+2. **سازگاری رو به عقب (Backward Compatibility):**  
+   همیشه فیلدهای جدید را اختیاری (`room?: string`) یا با مقدار پیش‌فرض در نظر بگیرید تا داده‌های گذشته دچار خطای ارزیابی نشوند.
+3. **آزمون‌های خودکار ارتقا:**  
+   پیش از ادغام هر Pull Request که اسکیما را تغییر می‌دهد، تست‌های سازگاری دیتابیس با کتابخانه `fake-indexeddb` اجرا شوند تا ارتقای ساختار از نسخه قبل به نسخه بعد با موفقیت اعتبارسنجی شود.
+
+---
+
+## ۱۴. معماری امنیت و احراز هویت محلی (Local-First Authentication)
+
+کلاس‌یار از یک لایه امنیت بدون سرور (Zero-Knowledge Local Auth) در فایل‌های [`src/lib/auth.ts`](../src/lib/auth.ts) و [`src/store/authStore.ts`](../src/store/authStore.ts) بهره می‌برد:
+
+```mermaid
+flowchart TD
+    UserPassword["رمز عبور ورودی کاربر"] --> SublteCrypto["Web Crypto API (crypto.subtle)"]
+    RandomSalt["تولید سالت ۱۶ بایتی تصادفی"] --> SublteCrypto
+    SublteCrypto --> PBKDF2["الگوریتم PBKDF2 با SHA-256 و 100,000 دور چرخه"]
+    PBKDF2 --> PassHash["هش غیرقابل‌بازگشت (Password Hash)"]
+    PassHash --> UsersTable[("جدول users در IndexedDB")]
+    
+    SessionGuard["ناظر روت‌ها و انقضای نشست (Session Timeout)"] --> LockScreen["صفحه قفل نرم‌افزار (Lock Screen)"]
+```
+
+### ویژگی‌های کلیدی این لایه:
+1. **استاندارد رمزنگاری بانکی بدون ارسال به سرور:** پردازش با موتور بومی مرورگر (`crypto.subtle`) و بدون استفاده از کتابخانه‌های سنگین جاوااسکریپتی انجام می‌شود.
+2. **پایداری سالت (Salt Isolation):** هر کاربر سالت تصادفی منحصربه‌فرد دارد که حمله با جداول رنگین‌کمانی (Rainbow Tables) را غیرممکن می‌سازد.
+3. **قفل سریع (Lock Screen):** بدون خروج کامل و با فشردن آیکون قفل، متغیر `isLocked` فعال شده و دسترسی به اطلاعات تا زمان وارد کردن مجدد رمز مسدود می‌شود.
+
+---
+
+## ۱۵. قراردادها و استانداردهای کدنویسی (Code Conventions)
 
 برای حفظ خوانایی و پایداری بلندمدت مخزن، رعایت قراردادهای زیر برای تمامی مشارکت‌کنندگان الزامی است:
 
@@ -622,7 +734,7 @@ export * from "./export-csv"
 
 ---
 
-## ۱۴. پیوندها و مستندات تکمیلی
+## ۱۶. پیوندها و مستندات تکمیلی
 
 جهت کسب اطلاعات عمیق‌تر در خصوص فلسفه طراحی و دستورالعمل‌های مشارکت، حتماً اسناد زیر را نیز مطالعه فرمایید:
 

@@ -14,7 +14,8 @@
 6. [موتور تقویم: چرا ترکیب FullCalendar و محاسبات جلالی (dualcal / jalaali-js)؟](#۶-موتور-تقویم-چرا-ترکیب-fullcalendar-و-محاسبات-جلالی-dualcal--jalaali-js)
 7. [چالش بزرگ PDF فارسی و راهکار DOM-to-Canvas](#۷-چالش-بزرگ-pdf-فارسی-و-راهکار-dom-to-canvas)
 8. [تحلیل نقاط قوت، محدودیت‌ها و ریسک‌های معماری فعلی](#۸-تحلیل-نقاط-قوت-محدودیتها-و-ریسکهای-معماری-فعلی)
-9. [نقشه راه تکامل معماری (Architectural Roadmap)](#۹-نقشه-راه-تکامل-معماری-architectural-roadmap)
+9. [استراتژی ارتقای دیتابیس و مهاجرت ایمن در نسخه‌های آینده (Database Schema Migrations)](#۹-استراتژی-ارتقای-دیتابیس-و-مهاجرت-ایمن-در-نسخههای-آینده-database-schema-migrations)
+10. [نقشه راه تکامل معماری (Architectural Roadmap)](#۱۰-نقشه-راه-تکامل-معماری-architectural-roadmap)
 
 ---
 
@@ -25,21 +26,24 @@
 ```mermaid
 flowchart TD
     subgraph UI ["۱. لایه رابط کاربری (Presentation Layer)"]
-        Pages["صفحات اصلی (Pages)<br/>Calendar, Classes, Sessions, Attendance, Reports, Settings"]
-        Dialogs["دیالوگ‌ها و فرم‌ها (Dialogs & Modals)<br/>ClassForm, SessionForm, AttendanceDialog"]
-        Shadcn["مؤلفه‌های پایه (UI Primitives)<br/>Radix UI + Tailwind CSS"]
+        Pages["صفحات اصلی (Pages)<br/>Calendar, Classes, Sessions, Attendance, Reports, Settings, Auth"]
+        Dialogs["دیالوگ‌ها و فرم‌ها (Dialogs & Modals)<br/>ClassForm, SessionForm, AttendanceDialog, TimePicker"]
+        ThemeEngine["موتور تم و افکت‌ها<br/>4 Color Palettes + Aurora Background + Glassmorphism"]
+        Shadcn["مؤلفه‌های پایه (UI Primitives)<br/>Radix UI + Tailwind CSS + ErrorBoundary"]
     end
 
     subgraph StateAndHooks ["۲. لایه وضعیت و اتصال واکنشی (State & Reactive Layer)"]
         LiveQuery["اشتراک واکنشی (useLiveQuery)<br/>رصد خودکار تغییرات دیتابیس"]
-        ZustandStore["استور ترجیحات (Zustand Settings Store)<br/>Theme, Language, WeekStart"]
+        AuthStore["استور احراز هویت (Zustand Auth Store)<br/>Session, LockScreen, Route Protection"]
+        ZustandStore["استور ترجیحات (Zustand Settings Store)<br/>Theme, Palette, Language, WeekStart"]
         AppHooks["هوک‌های کمکی<br/>useTheme, useToast, useSettings"]
     end
 
-    subgraph BusinessLogic ["۳. لایه منطق کسب‌وکار (Domain & Logic Layer)"]
+    subgraph BusinessLogic ["۳. لایه منطق کسب‌وکار و امنیت (Domain & Security Layer)"]
+        SecurityEngine["امنیت محلی (auth.ts)<br/>PBKDF2 + SHA-256 (100,000 Iterations) + Random Salt"]
         PureLogic["توابع محاسباتی خالص (pure-logic.ts)<br/>محاسبه مدت، همپوشانی، سقف جلسات، درصد حضور"]
         Validation["اعتبارسنجی‌ها و نرمال‌سازی (validation & normalization)<br/>تاریخ شمسی، ساعت، یکتایی"]
-        ExportEngine["موتور صدور اسناد (reports/)<br/>Excel, PDF, Word, JSON"]
+        ExportEngine["موتور صدور اسناد (reports/)<br/>Excel (xlsx-js-style), PDF (Vazirmatn), Word, JSON"]
     end
 
     subgraph DataAccess ["۴. لایه دسترسی به داده (Data Access Layer)"]
@@ -48,14 +52,17 @@ flowchart TD
     end
 
     subgraph Storage ["۵. موتور ذخیره‌سازی محلی (Storage Engine)"]
-        Dexie["Dexie.js Engine<br/>تراکنش‌های ACID، ایندکس‌های مرکب، Migration"]
-        IndexedDB[("مرورگر کاربر: IndexedDB<br/>پایگاه داده KlasYar")]
+        Dexie["Dexie.js Engine (Version 2)<br/>تراکنش‌های ACID، ایندکس‌های مرکب، Schema Migration"]
+        IndexedDB[("مرورگر کاربر: IndexedDB (Database: 'klasyar')<br/>classDefinitions, sessions, attendance, settings, users")]
     end
 
     Pages --> Dialogs
     Pages --> LiveQuery
+    Pages --> AuthStore
     Dialogs --> CRUDFunctions
     LiveQuery --> DataAccess
+    AuthStore --> SecurityEngine
+    SecurityEngine --> Dexie
     CRUDFunctions --> BusinessLogic
     CRUDFunctions --> Dexie
     ZustandStore --> Dexie
@@ -225,24 +232,43 @@ sequenceDiagram
 
 ---
 
-## ۹. نقشه راه تکامل معماری (Architectural Roadmap)
+## ۹. استراتژی ارتقای دیتابیس و مهاجرت ایمن در نسخه‌های آینده (Database Schema Migrations)
+
+یکی از دغدغه‌های کلیدی پروژه‌های بزرگ با رشد بالا این است که وقتی صدها یا هزاران کاربر نسخه فعلی را نصب کرده و اطلاعات خود را وارد کرده‌اند، با انتشار نسخه‌های جدیدتر (`v0.4.0`, `v1.0.0`) چه بلایی سر دیتابیس می‌آید؟
+
+### مکانیزم تضمین حفظ داده‌ها (Zero Data Loss Architecture):
+کلاس‌یار بر اساس الگوی رسمی مهاجرت دیتابیس **Dexie Versioning Engine** عمل می‌کند:
+1. **جداسازی نسخه داده از کد:** کدهای وب‌اپلیکیشن در مرورگر کش می‌شوند، اما IndexedDB در لایه ذخیره‌سازی ایزوله سیستم‌عامل نگهداری می‌شود.
+2. **پیمایش ترتیبی نسخه‌ها:** هرگاه کاربری نسخه جدید را باز کند، Dexie شماره نسخه فعلی دیتابیس کاربر را با `DB_VERSION` پروژه مقایسه می‌کند:
+   - اگر کاربر روی نسخه ۱ باشد و نسخه جدید ۳ باشد، دیتابیس ابتدا متد `version(2)` و سپس `version(3)` را پشت‌سرهم اجرا می‌کند.
+   - هیچ رکوردی از جداول قبلی (`classDefinitions`, `sessions`, `attendance`) رونویسی یا پاک نمی‌شود.
+3. **پشتیبانی از توابع ارتقا (`.upgrade()`):** در صورت نیاز به بازسازی ساختار ستون‌ها، متد ارتقا درون یک تراکنش اتمیک (ACID) اجرا شده و در صورت بروز هرگونه مشکل، وضعیت به نسخه قبل Rollback می‌شود.
+
+---
+
+## ۱۰. نقشه راه تکامل معماری (Architectural Roadmap)
 
 برای نسخه‌های آتی نرم‌افزار کلاس‌یار، ارتقاهای معماری زیر برنامه‌ریزی شده است:
 
-### ۱. تبدیل به برنامه پیش‌رونده وب (PWA)
-- افزودن **Service Worker** جهت کش کامل فایل‌های CSS، جاوااسکریپت و فونت‌ها.
-- قابلیت نصب روی صفحه اصلی سیستم‌عامل‌های Windows, macOS, Android و iOS با آیکون مستقل.
-- باز شدن در پنجره اختصاصی بدون نوار آدرس مرورگر (Standalone Window).
+### ۱. نسخه ۰.۳.۰ (v0.3.0) — محقق‌شده ✅
+- پیاده‌سازی احراز هویت ادمین محلی با رمزنگاری PBKDF2 و ارتقای دیتابیس به نسخه ۲ (جدول `users`).
+- موتور تم ۴گانه لوکس و جلوه‌های شفق قطبی (Aurora Background & Glow Effect).
+- انتخابگر شناور مستقیم ماه و سال جلالی و تایم‌پیکر تعاملی نوین.
+- حل ریشه‌ای خطاهای React Rules of Hooks در دیالوگ حضور و غیاب.
+- گذر موفقیت‌آمیز از ۸۳ آزمون خودکار.
 
-### ۲. لایه همگام‌سازی اختیاری ابری (Optional Cloud Sync)
-- طراحی یک آداپتور منعطف برای اتصال به سرورهای سبک مانند **PocketBase** یا **Supabase**.
-- پیاده‌سازی رمزنگاری سرتاسری (**E2EE - End-to-End Encryption**): داده‌ها در دستگاه کاربر با کلید اختصاصی رمزگذاری شده و سپس به فضای ابری ارسال می‌شوند، به طوری که حتی سرور نیز قادر به خواندن اسامی شاگردان نخواهد بود.
+### ۲. نسخه ۰.۴.۰ (v0.4.0) — در دست اقدام 🚧
+- توسعه پالت فرمان و جستجوی سراسری (`Ctrl+K` Command Palette).
+- میانبرهای سریع کیبورد برای ثبت سریع حضور و غیاب و ناوبری تقویم.
+- تکمیل سازوکار هوشمند Service Worker و بنر اطلاع‌رسانی نسخه جدید در PWA.
 
-### ۳. پشتیبانی از همگام‌سازی محلی P2P (بدون اینترنت)
-- استفاده از بسترهای وب‌سوکت محلی یا WebRTC جهت انتقال آنی داده‌ها میان گوشی همراه و لپ‌تاپ در یک شبکه Wi-Fi محلی.
+### ۳. نسخه ۰.۵.۰ (v0.5.0) — همگام‌سازی اختیاری ابری
+- طراحی آداپتور منعطف برای اتصال به سرورهای سبک مانند **PocketBase** یا **WebDAV**.
+- پیاده‌سازی رمزنگاری سرتاسری (**E2EE - End-to-End Encryption**): داده‌ها در دستگاه کاربر با کلید اختصاصی رمزگذاری شده و سپس به فضای ابری ارسال می‌شوند.
 
-### ۴. ایمپورت گروهی شاگردان و برنامه‌ها
-- ماژول هوشمند پردازش فایل‌های اکسل موجود آموزشگاه‌ها و تبدیل مستقیم آنها به جداول دیتابیس محلی.
+### ۴. نسخه ۱.۰.۰ (v1.0.0) — انتشار پایدار و بسته‌بندی موبایل
+- بسته‌بندی برای فروشگاه‌های اندروید (Google Play / کافه‌بازار / مایکت) و iOS با استفاده از فریم‌ورک **Capacitor**.
+- پشتیبانی کامل از زبان انگلیسی و تقویم میلادی در کنار تقویم شمسی جلالی.
 
 ---
 
