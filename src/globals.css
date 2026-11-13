@@ -126,55 +126,96 @@ html {
    5. Aurora (شفق قطبی) Animated Background & Glow Utility (Prompt 28)
    ========================================================================== */
 
-/* Aurora Animated Blobs with Dynamic Primary Theme Binding */
-.aurora-blob-1 {
+/* گوی نوری مدور و شناور مینیمال (Floating Luminous Sphere / توپ نوری روان) */
+.aurora-floating-orb {
   position: absolute;
-  top: -12%;
-  right: 5%;
-  width: 44rem;
-  height: 44rem;
+  top: 15%;
+  right: 18%;
+  width: 18rem;
+  height: 18rem;
   border-radius: 9999px;
-  background: radial-gradient(circle, hsl(var(--primary) / 0.18) 0%, hsl(var(--primary) / 0.05) 45%, transparent 70%);
-  filter: blur(100px);
+  background: radial-gradient(circle at 35% 35%,
+    hsl(var(--primary) / 0.35) 0%,
+    hsl(var(--primary) / 0.15) 35%,
+    hsl(var(--primary) / 0.04) 55%,
+    transparent 70%
+  );
+  filter: blur(24px);
   pointer-events: none;
   will-change: transform;
-  animation: aurora-1 18s ease-in-out infinite alternate;
+  animation: aurora-float-orbit 28s ease-in-out infinite alternate;
+}
+
+.dark .aurora-floating-orb {
+  background: radial-gradient(circle at 35% 35%,
+    hsl(var(--primary) / 0.3) 0%,
+    hsl(var(--primary) / 0.12) 35%,
+    hsl(var(--primary) / 0.02) 55%,
+    transparent 70%
+  );
+  filter: blur(22px);
+}
+
+/* هاله دوم کمکی بسیار ملایم در گوشه پایین */
+.aurora-blob-1 {
+  display: none;
 }
 
 .aurora-blob-2 {
-  position: absolute;
-  top: 25%;
-  left: -5%;
-  width: 38rem;
-  height: 38rem;
-  border-radius: 9999px;
-  background: radial-gradient(circle, hsl(var(--accent-foreground, var(--primary)) / 0.14) 0%, hsl(var(--primary) / 0.04) 50%, transparent 70%);
-  filter: blur(110px);
-  pointer-events: none;
-  will-change: transform;
-  animation: aurora-2 22s ease-in-out infinite alternate;
+  display: none;
 }
 
 .aurora-blob-3 {
-  position: absolute;
-  bottom: 5%;
-  right: 15%;
-  width: 36rem;
-  height: 36rem;
-  border-radius: 9999px;
-  background: radial-gradient(circle, hsl(var(--primary) / 0.12) 0%, transparent 65%);
-  filter: blur(115px);
-  pointer-events: none;
-  will-change: transform;
-  animation: aurora-3 26s ease-in-out infinite alternate;
+  display: none;
 }
 
 .aurora-radial-center {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 20%, hsl(var(--primary) / 0.08) 0%, transparent 75%);
-  pointer-events: none;
-  animation: aurora-pulse 12s ease-in-out infinite alternate;
+  display: none;
+}
+
+.ambient-dots-overlay {
+  display: none;
+}
+
+/* ==========================================================================
+   انیمیشن‌های روان و ارگانیک کی‌فریمز شفق قطبی (Aurora Keyframes)
+   ========================================================================== */
+@keyframes aurora-float-orbit {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  25% {
+    transform: translate(120px, 60px) scale(1.08);
+  }
+  50% {
+    transform: translate(40px, 160px) scale(0.95);
+  }
+  75% {
+    transform: translate(-80px, 90px) scale(1.05);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes aurora-1 {
+  0%, 100% { transform: none; }
+}
+
+@keyframes aurora-2 {
+  0%, 100% { transform: none; }
+}
+
+@keyframes aurora-3 {
+  0%, 100% { transform: none; }
+}
+
+@keyframes aurora-orbit {
+  0%, 100% { transform: none; }
+}
+
+@keyframes aurora-pulse {
+  0%, 100% { opacity: 0; }
 }
 
 /* ==========================================================================
@@ -221,6 +262,7 @@ html {
   .aurora-blob-1,
   .aurora-blob-2,
   .aurora-blob-3,
+  .aurora-floating-orb,
   .aurora-radial-center {
     animation: none !important;
     transform: none !important;

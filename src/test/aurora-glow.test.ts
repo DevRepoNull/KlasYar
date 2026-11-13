@@ -15,7 +15,9 @@ describe("Prompt 28: Aurora Background, Glow Effect & Final Polish", () => {
       "aurora-blob-1",
       "aurora-blob-2",
       "aurora-blob-3",
+      "aurora-floating-orb",
       "aurora-radial-center",
+      "ambient-dots-overlay",
     ]
 
     expectedAuroraClasses.forEach((cls) => {

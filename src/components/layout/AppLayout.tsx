@@ -105,7 +105,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
         <AppHeader pathname={pathname} />
 
-        <div className="flex flex-1 items-stretch w-full min-h-[calc(100vh-4rem)]">
+        <div className="relative z-10 flex flex-1 items-stretch w-full min-h-[calc(100vh-4rem)]">
           <Sidebar
             collapsed={collapsed}
             onToggle={() => setCollapsed((value) => !value)}
