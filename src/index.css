@@ -1,3 +1,5 @@
+@import "./globals.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -36,6 +38,20 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 172 66% 28%;
     --radius: 0.85rem;
+
+    /* Custom CSS Variables */
+    --color-primary: hsl(var(--primary));
+    --color-primary-fg: hsl(var(--primary-foreground));
+    --color-bg: hsl(var(--background));
+    --color-fg: hsl(var(--foreground));
+    --color-card: hsl(var(--card));
+    --color-card-fg: hsl(var(--card-foreground));
+    --color-border: hsl(var(--border));
+    --color-ring: hsl(var(--ring));
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-fg: hsl(var(--secondary-foreground));
+    --color-accent: hsl(var(--accent));
+    --color-accent-fg: hsl(var(--accent-foreground));
   }
 
   .dark {
@@ -58,6 +74,122 @@
     --border: 217 33% 20%;
     --input: 217 33% 22%;
     --ring: 172 68% 45%;
+
+    /* Custom CSS Variables in Dark Mode */
+    --color-primary: hsl(var(--primary));
+    --color-primary-fg: hsl(var(--primary-foreground));
+    --color-bg: hsl(var(--background));
+    --color-fg: hsl(var(--foreground));
+    --color-card: hsl(var(--card));
+    --color-card-fg: hsl(var(--card-foreground));
+    --color-border: hsl(var(--border));
+    --color-ring: hsl(var(--ring));
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-fg: hsl(var(--secondary-foreground));
+    --color-accent: hsl(var(--accent));
+    --color-accent-fg: hsl(var(--accent-foreground));
+  }
+
+  /* =========================================================================
+     پالت‌های رنگی داینامیک (Emerald, Midnight, Sunset, Monochrome)
+     ========================================================================= */
+
+  /* ۱. پالت زمرد (Emerald - پیش‌فرض) */
+  [data-color-theme="emerald"] {
+    --primary: 172 66% 28%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 172 66% 28%;
+    --accent: 172 50% 94%;
+    --accent-foreground: 172 66% 22%;
+  }
+
+  .dark[data-color-theme="emerald"], [data-color-theme="emerald"].dark {
+    --primary: 172 68% 45%;
+    --primary-foreground: 222 47% 8%;
+    --ring: 172 68% 45%;
+    --accent: 217 33% 20%;
+    --accent-foreground: 172 60% 80%;
+  }
+
+  /* ۲. پالت نیمه‌شب (Midnight - آبی نفتی با جزئیات بنفش) */
+  [data-color-theme="midnight"] {
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 221 83% 53%;
+    --accent: 226 100% 96%;
+    --accent-foreground: 224 76% 36%;
+    --background: 220 33% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --border: 220 20% 90%;
+  }
+
+  .dark[data-color-theme="midnight"], [data-color-theme="midnight"].dark {
+    --primary: 217 91% 60%;
+    --primary-foreground: 224 71% 4%;
+    --ring: 217 91% 60%;
+    --accent: 224 50% 18%;
+    --accent-foreground: 217 91% 85%;
+    --background: 224 71% 5%;
+    --foreground: 210 40% 98%;
+    --card: 224 64% 9%;
+    --card-foreground: 210 40% 98%;
+    --border: 224 45% 18%;
+  }
+
+  /* ۳. پالت غروب (Sunset - نارنجی و مرجانی گرم) */
+  [data-color-theme="sunset"] {
+    --primary: 16 88% 50%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 16 88% 50%;
+    --accent: 16 100% 96%;
+    --accent-foreground: 16 88% 35%;
+    --background: 30 25% 98%;
+    --foreground: 20 40% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 40% 10%;
+    --border: 20 25% 90%;
+  }
+
+  .dark[data-color-theme="sunset"], [data-color-theme="sunset"].dark {
+    --primary: 17 95% 60%;
+    --primary-foreground: 20 60% 6%;
+    --ring: 17 95% 60%;
+    --accent: 15 50% 18%;
+    --accent-foreground: 17 95% 85%;
+    --background: 20 40% 6%;
+    --foreground: 30 25% 98%;
+    --card: 20 35% 10%;
+    --card-foreground: 30 25% 98%;
+    --border: 20 30% 18%;
+  }
+
+  /* ۴. پالت تک‌رنگ (Monochrome - خاکستری‌های مدرن و شیک) */
+  [data-color-theme="monochrome"] {
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 240 5.9% 10%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --border: 240 5.9% 90%;
+  }
+
+  .dark[data-color-theme="monochrome"], [data-color-theme="monochrome"].dark {
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --ring: 0 0% 98%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 6% 8%;
+    --card-foreground: 0 0% 98%;
+    --border: 240 4% 17%;
   }
 
   * {
@@ -65,13 +197,23 @@
   }
 
   html {
+    font-size: 16px;
     -webkit-tap-highlight-color: transparent;
+    direction: rtl;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss02";
     text-rendering: optimizeLegibility;
+    direction: rtl;
+    text-align: right;
+  }
+
+  #root {
+    direction: rtl;
+    text-align: right;
+    min-height: 100vh;
   }
 }
 

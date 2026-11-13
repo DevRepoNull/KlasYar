@@ -14,6 +14,7 @@ import {
 } from "@/components/attendance/attendance-constants"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ErrorBoundary } from "@/components/ui/error-boundary"
 import {
   Dialog,
   DialogContent,
@@ -79,10 +80,20 @@ export function SessionAttendanceDialog({
     }
   }, [lastSavedStudent])
 
-  if (!session || !definition) return null
-
-  const students = definition.students
+  const students = useMemo(
+    () => (definition && Array.isArray(definition.students) ? definition.students : []),
+    [definition],
+  )
   const totalStudents = students.length
+
+  const sessionDateTitle = useMemo(() => {
+    if (!session?.date) return ""
+    try {
+      return formatJalaliFullDate(parseJalaliDate(session.date))
+    } catch {
+      return session.date
+    }
+  }, [session?.date])
 
   // محاسبات آمار حضور جلسه
   const stats = useMemo(() => {
@@ -93,6 +104,7 @@ export function SessionAttendanceDialog({
     let unrecorded = 0
 
     for (const student of students) {
+      if (!student || !student.id) continue
       const status = attendanceMap.get(student.id)
       if (status === "present") present++
       else if (status === "late") late++
@@ -117,6 +129,9 @@ export function SessionAttendanceDialog({
       presentRate,
     }
   }, [students, attendanceMap])
+
+  // اطمینان از خروج ایمن پس از اجرای بدون شرط تمام هوک‌های ری‌اکت
+  if (!session || !definition) return null
 
   // ذخیره خودکار هنگام کلیک روی هر وضعیت (اگر همان وضعیت قبلی باشد، به ثبت‌نشده برمی‌گردد)
   const handleToggleStatus = async (
@@ -196,12 +211,13 @@ export function SessionAttendanceDialog({
             </DialogTitle>
           </div>
           <DialogDescription>
-            {formatJalaliFullDate(parseJalaliDate(session.date))} · ساعت{" "}
-            {formatClock(session.start)} تا {formatClock(session.end)}
+            {sessionDateTitle} · ساعت{" "}
+            {formatClock(session.start ?? "")} تا {formatClock(session.end ?? "")}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <ErrorBoundary sectionName="فهرست حضور جلسه">
+          <div className="space-y-4">
           {/* کارت وضعیت کلی و نشانگر بصری حاضرین */}
           <div className="space-y-3 rounded-2xl border bg-card/60 p-3.5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -388,6 +404,7 @@ export function SessionAttendanceDialog({
             </p>
           ) : null}
         </div>
+      </ErrorBoundary>
 
         <DialogFooter>
           <Button type="button" onClick={onClose} className="w-full sm:w-auto">

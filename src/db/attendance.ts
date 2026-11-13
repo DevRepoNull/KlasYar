@@ -45,7 +45,8 @@ async function assertSessionStudent(
   if (!definition) {
     throw new DatabaseError("not-found", "کلاس این جلسه یافت نشد.")
   }
-  if (!definition.students.some((student) => student.id === studentId)) {
+  const students = Array.isArray(definition.students) ? definition.students : []
+  if (!students.some((student) => student && student.id === studentId)) {
     throw new DatabaseError(
       "validation",
       "این دانش‌آموز در فهرست دانش‌آموزان کلاس نیست.",
@@ -159,10 +160,22 @@ export async function deleteAttendanceBySessionAndStudent(
   studentId: string,
 ): Promise<boolean> {
   return runDb(async () => {
-    const count = await db.attendance
+    let count = await db.attendance
       .where("[sessionId+studentId]")
       .equals([sessionId, studentId])
       .delete()
+
+    if (count === 0) {
+      const items = await db.attendance
+        .where("sessionId")
+        .equals(sessionId)
+        .filter((r) => r.studentId === studentId)
+        .toArray()
+      if (items.length > 0) {
+        await db.attendance.bulkDelete(items.map((i) => i.id))
+        count = items.length
+      }
+    }
     return count > 0
   })
 }

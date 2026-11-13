@@ -14,9 +14,7 @@
       crossorigin
     />
     <script>
-      // پیش از رندر، تم ذخیره‌شده را اعمال می‌کنیم تا صفحه پرش نور نداشته باشد.
-      // منبع اصلی تنظیمات IndexedDB است و خواندن همگام ندارد؛ این cookie فقط
-      // یک آینه‌ی کوچک برای همین اسکریپت است.
+      // پیش از رندر، تم و پالت رنگی ذخیره‌شده را اعمال می‌کنیم تا صفحه پرش نور یا رنگ نداشته باشد.
       (function () {
         try {
           var match = document.cookie.match(
@@ -31,11 +29,17 @@
           document.documentElement.style.colorScheme = isDark
             ? "dark"
             : "light"
+
+          var colorMatch = document.cookie.match(
+            /(?:^|;\s*)klasyar-color-theme=(emerald|midnight|sunset|monochrome)/,
+          )
+          var colorTheme = colorMatch ? colorMatch[1] : (localStorage.getItem("klasyar-color-theme") || "emerald")
+          document.documentElement.setAttribute("data-color-theme", colorTheme)
         } catch (e) {}
       })()
     </script>
   </head>
-  <body>
+  <body dir="rtl">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import {
-  CalendarDays,
-  Clock3,
   Loader2,
   TriangleAlert,
 } from "lucide-react"
@@ -17,6 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { JalaliDatePicker } from "@/components/ui/jalali-date-picker"
+import { TimePicker } from "@/components/ui/time-picker"
 import {
   Select,
   SelectContent,
@@ -41,9 +41,7 @@ import { getDatabaseErrorMessage } from "@/db/errors"
 import { notifySessionCreated } from "@/lib/notifications"
 import { useToast } from "@/hooks/use-toast"
 import {
-  formatJalaliFullDate,
   jalaliDateToString,
-  parseJalaliDate,
   todayJalali,
   toPersianDigits,
 } from "@/lib/jalali"
@@ -309,36 +307,16 @@ export function SessionFormDialog({
             <div className="space-y-1.5">
               <label
                 htmlFor="session-form-date"
-                className="flex items-center justify-between text-xs font-medium"
+                className="block text-xs font-medium text-foreground"
               >
-                <span>تاریخ جلسه (شمسی YYYY-MM-DD)</span>
-                {date ? (
-                  <span className="text-[11px] font-normal text-muted-foreground">
-                    {(() => {
-                      try {
-                        return formatJalaliFullDate(parseJalaliDate(date))
-                      } catch {
-                        return null
-                      }
-                    })()}
-                  </span>
-                ) : null}
+                تاریخ جلسه (شمسی)
               </label>
-              <div className="relative">
-                <Input
-                  id="session-form-date"
-                  dir="ltr"
-                  placeholder="1405-08-17"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  required
-                  className="text-center tabular-nums"
-                />
-                <CalendarDays
-                  className="pointer-events-none absolute start-3 top-2.5 h-4 w-4 text-muted-foreground"
-                  aria-hidden="true"
-                />
-              </div>
+              <JalaliDatePicker
+                id="session-form-date"
+                value={date}
+                onChange={setDate}
+                aria-label="تاریخ جلسه شمسی"
+              />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -349,21 +327,12 @@ export function SessionFormDialog({
                 >
                   ساعت شروع
                 </label>
-                <div className="relative">
-                  <Input
-                    id="session-form-start"
-                    type="time"
-                    required
-                    dir="ltr"
-                    value={start}
-                    onChange={(event) => setStart(event.target.value)}
-                    className="text-center tabular-nums"
-                  />
-                  <Clock3
-                    className="pointer-events-none absolute start-3 top-2.5 h-4 w-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </div>
+                <TimePicker
+                  id="session-form-start"
+                  value={start}
+                  onChange={setStart}
+                  aria-label="ساعت شروع جلسه"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -373,21 +342,12 @@ export function SessionFormDialog({
                 >
                   ساعت پایان
                 </label>
-                <div className="relative">
-                  <Input
-                    id="session-form-end"
-                    type="time"
-                    required
-                    dir="ltr"
-                    value={end}
-                    onChange={(event) => setEnd(event.target.value)}
-                    className="text-center tabular-nums"
-                  />
-                  <Clock3
-                    className="pointer-events-none absolute start-3 top-2.5 h-4 w-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </div>
+                <TimePicker
+                  id="session-form-end"
+                  value={end}
+                  onChange={setEnd}
+                  aria-label="ساعت پایان جلسه"
+                />
               </div>
             </div>
 
@@ -486,6 +446,7 @@ export function SessionFormDialog({
               </Button>
               <Button
                 type="submit"
+                className="glow-effect"
                 disabled={
                   saving ||
                   isLimitReached ||

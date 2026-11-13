@@ -18,6 +18,10 @@ export const settingsListVariants: Variants = {
     opacity: 1,
     transition: { staggerChildren: 0.07, delayChildren: 0.04 },
   },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.1 },
+  },
 }
 
 export const settingsItemVariants: Variants = {
@@ -26,6 +30,10 @@ export const settingsItemVariants: Variants = {
     opacity: 1,
     y: 0,
     transition: { duration: 0.35, ease: "easeOut" },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.1 },
   },
 }
 
@@ -45,12 +53,12 @@ export function SettingsSection({
   return (
     <motion.section variants={settingsItemVariants}>
       <Card className="overflow-hidden">
-        <CardHeader className="flex-row items-center gap-3 space-y-0 border-b bg-muted/40 py-4">
+        <CardHeader className="flex-row items-center gap-3 space-y-0 border-b bg-muted/40 py-4 text-start">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
             <Icon className="h-4 w-4" aria-hidden="true" />
           </span>
-          <div className="space-y-0.5">
-            <CardTitle className="text-base">{title}</CardTitle>
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <CardTitle className="text-base font-bold">{title}</CardTitle>
             {description ? (
               <CardDescription className="text-xs leading-5">
                 {description}
@@ -83,17 +91,17 @@ export function SettingRow({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between text-start",
         disabled && "opacity-60",
       )}
     >
-      <div className="min-w-0 space-y-1">
+      <div className="min-w-0 space-y-1 flex-1">
         {htmlFor ? (
-          <label htmlFor={htmlFor} className="block text-sm font-medium">
+          <label htmlFor={htmlFor} className="block text-sm font-medium text-foreground cursor-pointer">
             {label}
           </label>
         ) : (
-          <p className="text-sm font-medium">{label}</p>
+          <p className="text-sm font-medium text-foreground">{label}</p>
         )}
         {description ? (
           <p className="text-xs leading-5 text-muted-foreground">

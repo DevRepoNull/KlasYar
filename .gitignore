@@ -27,6 +27,13 @@ jspm_packages/
 .yarn/build-state.yml
 .yarn/install-state.gz
 
+# Extra package managers & alternate lockfiles (Standard is npm package-lock.json)
+pnpm-lock.yaml
+pnpm-workspace.yaml
+yarn.lock
+bun.lockb
+bun.lock
+
 # ==============================================================================
 # Production and Build Outputs
 # ==============================================================================
@@ -47,6 +54,7 @@ out/
 .cache/
 temp/
 tmp/
+scratch/
 
 # ==============================================================================
 # Testing and Code Coverage

@@ -3,16 +3,18 @@ import { createJSONStorage, persist } from "zustand/middleware"
 
 import { settingsStorage } from "@/lib/idbStorage"
 import { applyFontFamily, type AppFont } from "@/lib/font"
+import { applyColorTheme, type ColorTheme } from "@/lib/color-theme"
 
 export type ThemeMode = "light" | "dark" | "system"
 export type Language = "fa" | "en"
 /** شنبه = اولین روز هفته در تقویم ایران */
 export type WeekStart = "saturday" | "sunday" | "monday"
-export type { AppFont }
+export type { AppFont, ColorTheme }
 
 /** preferenceهایی که در IndexedDB ذخیره می‌شوند. */
 export interface SettingsValues {
   theme: ThemeMode
+  colorTheme: ColorTheme
   language: Language
   weekStart: WeekStart
   /** مدت پیش‌فرض هر جلسه به دقیقه */
@@ -36,6 +38,7 @@ export interface SettingsValues {
 
 export const DEFAULT_SETTINGS: SettingsValues = {
   theme: "system",
+  colorTheme: "emerald",
   language: "fa",
   weekStart: "saturday",
   defaultSessionDuration: 60,
@@ -53,6 +56,7 @@ interface SettingsActions {
   /** چند preference را هم‌زمان به‌روز می‌کند. */
   updateSettings: (partial: Partial<SettingsValues>) => void
   setTheme: (theme: ThemeMode) => void
+  setColorTheme: (colorTheme: ColorTheme) => void
   setFontFamily: (fontFamily: AppFont) => void
   completeOnboarding: () => void
   resetOnboarding: () => void
@@ -72,6 +76,7 @@ export type SettingsStore = SettingsValues & SettingsActions & SettingsUIState
 export function pickSettingsValues(source: SettingsValues): SettingsValues {
   return {
     theme: source.theme,
+    colorTheme: source.colorTheme ?? "emerald",
     language: source.language,
     weekStart: source.weekStart,
     defaultSessionDuration: source.defaultSessionDuration,
@@ -95,9 +100,16 @@ export const useSettingsStore = create<SettingsStore>()(
         if (partial.fontFamily) {
           applyFontFamily(partial.fontFamily)
         }
+        if (partial.colorTheme) {
+          applyColorTheme(partial.colorTheme)
+        }
         set(partial)
       },
       setTheme: (theme) => set({ theme }),
+      setColorTheme: (colorTheme) => {
+        applyColorTheme(colorTheme)
+        set({ colorTheme })
+      },
       setFontFamily: (fontFamily) => {
         applyFontFamily(fontFamily)
         set({ fontFamily })
@@ -110,6 +122,7 @@ export const useSettingsStore = create<SettingsStore>()(
       closeOnboarding: () => set({ isOnboardingOpen: false }),
       resetSettings: () => {
         applyFontFamily(DEFAULT_SETTINGS.fontFamily)
+        applyColorTheme(DEFAULT_SETTINGS.colorTheme)
         set({ ...DEFAULT_SETTINGS, isOnboardingOpen: false })
       },
     }),
@@ -124,8 +137,13 @@ export const useSettingsStore = create<SettingsStore>()(
             "[settings] خواندن تنظیمات از IndexedDB ناموفق بود؛ مقادیر پیش‌فرض استفاده می‌شود.",
             error,
           )
-        } else if (state?.fontFamily) {
-          applyFontFamily(state.fontFamily)
+        } else {
+          if (state?.fontFamily) {
+            applyFontFamily(state.fontFamily)
+          }
+          if (state?.colorTheme) {
+            applyColorTheme(state.colorTheme)
+          }
         }
       },
     },

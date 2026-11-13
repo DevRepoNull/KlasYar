@@ -1,5 +1,6 @@
 import { DatabaseError, runDb } from "./errors"
 import { checkTimeOverlap, isSessionLimitReached } from "@/lib/pure-logic"
+import { jalaliToDate, parseJalaliDate } from "@/lib/jalali"
 import {
   dayOfWeekFromDate,
   db,
@@ -325,7 +326,7 @@ export async function deleteSession(id: string): Promise<void> {
  */
 export async function generateClassSessions(
   definitionId: string,
-  options: { count?: number } = {},
+  options: { count?: number; startDate?: string | Date } = {},
 ): Promise<Session[]> {
   return runDb(() =>
     db.transaction("rw", db.classDefinitions, db.sessions, async () => {
@@ -351,7 +352,18 @@ export async function generateClassSessions(
       const existingDates = new Set(existingSessions.map((s) => s.date))
 
       const now = nowIso()
-      const startRef = new Date()
+      let startRef = new Date()
+      if (options.startDate) {
+        if (typeof options.startDate === "string") {
+          try {
+            startRef = jalaliToDate(parseJalaliDate(options.startDate))
+          } catch {
+            startRef = new Date(options.startDate)
+          }
+        } else if (options.startDate instanceof Date) {
+          startRef = options.startDate
+        }
+      }
       const createdSessions: Session[] = []
 
       for (

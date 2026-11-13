@@ -4,7 +4,6 @@ import {
   Award,
   CalendarCheck2,
   CalendarClock,
-  CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -25,10 +24,12 @@ import {
   getNextAttendanceStatus,
   type ExtendedAttendanceStatus,
 } from "@/components/attendance/attendance-constants"
+import { AttendanceMatrix } from "@/components/attendance/attendance-matrix"
 import { SessionAttendanceDialog } from "@/components/attendance/session-attendance-dialog"
 import { SessionFormDialog } from "@/components/sessions/session-form-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -44,17 +45,12 @@ import {
 } from "@/db/attendance"
 import { getDatabaseErrorMessage } from "@/db/errors"
 import type { AttendanceStatus, Session } from "@/db/schema"
-import { SESSION_STATUS_LABELS } from "@/db/schema"
 import {
-  formatClock,
   formatJalaliMonthTitle,
-  formatJalaliShortDate,
   jalaliDateToString,
-  parseJalaliDate,
   shiftJalaliMonth,
   todayJalali,
   toPersianDigits,
-  weekdayName,
 } from "@/lib/jalali"
 import { calculateAttendancePercentage } from "@/lib/pure-logic"
 import { cn } from "@/lib/utils"
@@ -72,38 +68,29 @@ function SummaryCard({
   label,
   value,
   hint,
-  colorClass = "text-primary bg-primary/10",
+  colorClass = "text-primary bg-primary/10 border-primary/20",
 }: SummaryCardProps) {
   return (
-    <Card className="border-border/70 bg-card/70">
-      <CardContent className="flex items-center gap-3 p-4">
-        <span
-          className={cn(
-            "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-            colorClass,
-          )}
-        >
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-lg font-black tabular-nums">{value}</p>
-          <p className="truncate text-[11px] text-muted-foreground">{hint}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <motion.div whileHover={{ y: -3, transition: { duration: 0.18, ease: "easeOut" } }}>
+      <Card className="border-border/70 bg-card/75 backdrop-blur-xl transition-all duration-200 hover:border-border hover:shadow-md">
+        <CardContent className="flex items-center gap-3 p-4">
+          <span
+            className={cn(
+              "grid h-11 w-11 shrink-0 place-items-center rounded-2xl border shadow-sm",
+              colorClass,
+            )}
+          >
+            <Icon className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-muted-foreground">{label}</p>
+            <p className="text-xl font-black tabular-nums tracking-tight mt-0.5">{value}</p>
+            <p className="truncate text-[11px] text-muted-foreground mt-0.5">{hint}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
-}
-
-function getRateBadgeClass(rate: number | null): string {
-  if (rate === null) return "border-border/60 bg-muted/40 text-muted-foreground"
-  if (rate >= 85)
-    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-  if (rate >= 70)
-    return "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300"
-  if (rate >= 50)
-    return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-  return "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
 }
 
 export default function AttendancePage() {
@@ -139,27 +126,39 @@ export default function AttendancePage() {
   )
 
   const definition = monthlyData?.definition
-  const sessions = monthlyData?.sessions ?? []
-  const attendanceRecords = monthlyData?.attendance ?? []
+  const sessions = useMemo(
+    () => (Array.isArray(monthlyData?.sessions) ? monthlyData.sessions : []),
+    [monthlyData?.sessions],
+  )
+  const attendanceRecords = useMemo(
+    () => (Array.isArray(monthlyData?.attendance) ? monthlyData.attendance : []),
+    [monthlyData?.attendance],
+  )
 
   const monthTitle = formatJalaliMonthTitle(month.year, month.month)
+
+  // فهرست تضمین‌شده دانش‌آموزان کلاس
+  const allStudents = useMemo(() => {
+    return Array.isArray(definition?.students) ? definition.students : []
+  }, [definition?.students])
 
   // نقشه دسترسی سریع به وضعیت حضور بر اساس `sessionId_studentId`
   const attendanceMap = useMemo(() => {
     const map = new Map<string, AttendanceStatus>()
     for (const record of attendanceRecords) {
-      map.set(`${record.sessionId}_${record.studentId}`, record.status)
+      if (record && record.sessionId && record.studentId) {
+        map.set(`${record.sessionId}_${record.studentId}`, record.status)
+      }
     }
     return map
   }, [attendanceRecords])
 
   // فیلتر کردن دانش‌آموزان با جستجو
   const students = useMemo(() => {
-    const list = definition?.students ?? []
-    if (!searchQuery.trim()) return list
+    if (!searchQuery.trim()) return allStudents
     const q = searchQuery.trim().toLowerCase()
-    return list.filter((s) => s.name.toLowerCase().includes(q))
-  }, [definition, searchQuery])
+    return allStudents.filter((s) => (s?.name ?? "").toLowerCase().includes(q))
+  }, [allStudents, searchQuery])
 
   // آمار حضور به تفکیک هر دانش‌آموز در این ماه
   // نکته مهم لبه: جلساتی که هنوز رکوردی برای دانش‌آموز ثبت نشده «ثبت‌نشده» هستند و نباید غیبت به حساب آیند.
@@ -177,8 +176,8 @@ export default function AttendancePage() {
       }
     >()
 
-    const allStudents = definition?.students ?? []
     for (const student of allStudents) {
+      if (!student || !student.id) continue
       let present = 0
       let late = 0
       let excused = 0
@@ -186,6 +185,7 @@ export default function AttendancePage() {
       let unrecorded = 0
 
       for (const session of sessions) {
+        if (!session || !session.id) continue
         const status = attendanceMap.get(`${session.id}_${student.id}`)
         if (status === "present") present++
         else if (status === "late") late++
@@ -209,7 +209,7 @@ export default function AttendancePage() {
     }
 
     return statsMap
-  }, [definition, sessions, attendanceMap])
+  }, [allStudents, sessions, attendanceMap])
 
   // آمار کل ماه کلاس برای کارت‌های بالا
   const overallStats = useMemo(() => {
@@ -233,11 +233,11 @@ export default function AttendancePage() {
     return {
       overallRate,
       sessionsCount: sessions.length,
-      studentsCount: definition?.students.length ?? 0,
+      studentsCount: allStudents.length,
       perfectStudents,
       atRiskStudents,
     }
-  }, [studentStats, sessions, definition])
+  }, [studentStats, sessions.length, allStudents.length])
 
   // جابه‌جایی ماه
   const goToMonth = (delta: number) => {
@@ -250,12 +250,16 @@ export default function AttendancePage() {
 
   // تغییر وضعیت یک خانه ماتریس با کلیک (چرخش وضعیت + ذخیره خودکار در IndexedDB)
   const handleCellClick = async (sessionId: string, studentId: string) => {
+    if (!sessionId || !studentId) return
     const cellKey = `${sessionId}_${studentId}`
     setUpdatingCell(cellKey)
     setError(null)
 
+    const rawStatus = attendanceMap.get(cellKey)
     const currentStatus: ExtendedAttendanceStatus =
-      attendanceMap.get(cellKey) ?? "unrecorded"
+      rawStatus && rawStatus in ATTENDANCE_CONFIGS
+        ? (rawStatus as ExtendedAttendanceStatus)
+        : "unrecorded"
     const nextStatus = getNextAttendanceStatus(currentStatus)
 
     try {
@@ -274,37 +278,37 @@ export default function AttendancePage() {
   return (
     <div className="space-y-6">
       {/* سربرگ و فیلترهای اصلی */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+          <h1 className="text-xl font-black tracking-tight sm:text-2xl md:text-3xl">
             حضور و غیاب
           </h1>
-          <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+          <p className="max-w-xl text-xs sm:text-sm leading-5 sm:leading-6 text-muted-foreground">
             ماتریس ماهانه شاگرد × جلسه؛ با کلیک روی هر خانه وضعیت به صورت خودکار تغییر کرده و ذخیره می‌شود.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {/* انتخاب کلاس */}
           <Select
             value={effectiveClassId}
             onValueChange={setSelectedClassId}
           >
-            <SelectTrigger className="w-48 sm:w-56" aria-label="انتخاب کلاس">
+            <SelectTrigger className="w-full sm:w-auto sm:min-w-[16.5rem] h-9 text-xs" aria-label="انتخاب کلاس">
               <SelectValue placeholder="انتخاب کلاس" />
             </SelectTrigger>
             <SelectContent>
               {(definitions ?? []).map((def) => (
                 <SelectItem key={def.id} value={def.id}>
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 min-w-0 whitespace-nowrap">
                     <span
                       aria-hidden="true"
-                      className="h-2.5 w-2.5 rounded-full"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: def.color }}
                     />
-                    <span>{def.title}</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      ({toPersianDigits(def.students.length)} شاگرد)
+                    <span className="truncate max-w-[12rem]">{def.title}</span>
+                    <span className="shrink-0 text-[11px] text-muted-foreground whitespace-nowrap">
+                      ({toPersianDigits(def.students?.length ?? 0)}&nbsp;شاگرد)
                     </span>
                   </span>
                 </SelectItem>
@@ -313,11 +317,11 @@ export default function AttendancePage() {
           </Select>
 
           {/* تغییر ماه شمسی */}
-          <Button type="button" variant="outline" size="sm" onClick={goToToday}>
+          <Button type="button" variant="outline" size="sm" onClick={goToToday} className="h-9 text-xs active:scale-95 px-2.5">
             امروز
           </Button>
           <div
-            className="flex items-center gap-0.5 rounded-xl border bg-card p-1 shadow-sm"
+            className="flex items-center gap-0.5 rounded-xl border bg-card p-0.5 sm:p-1 shadow-sm"
             role="group"
             aria-label="جابه‌جایی ماه"
           >
@@ -325,15 +329,15 @@ export default function AttendancePage() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7 sm:h-8 sm:w-8 active:scale-95"
               aria-label="ماه قبل"
               onClick={() => goToMonth(-1)}
             >
-              <ChevronRight aria-hidden="true" />
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Button>
             <span
               aria-live="polite"
-              className="min-w-[7.5rem] px-1 text-center text-sm font-bold"
+              className="min-w-[6.5rem] sm:min-w-[7.5rem] px-1 text-center text-xs sm:text-sm font-bold"
             >
               {monthTitle}
             </span>
@@ -341,11 +345,11 @@ export default function AttendancePage() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7 sm:h-8 sm:w-8 active:scale-95"
               aria-label="ماه بعد"
               onClick={() => goToMonth(1)}
             >
-              <ChevronLeft aria-hidden="true" />
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -378,7 +382,7 @@ export default function AttendancePage() {
               onClick={() => {
                 window.location.href = "/classes"
               }}
-              className="mt-2 gap-2"
+              className="mt-2 gap-2 glow-effect"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               تعریف کلاس جدید
@@ -387,40 +391,48 @@ export default function AttendancePage() {
         </Card>
       ) : (
         <>
-          {/* کارت‌های خلاصه آمار بالای صفحه */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <SummaryCard
-              icon={Percent}
-              label="میانگین حضور کلاس"
-              value={
-                overallStats.overallRate === null
-                  ? "—"
-                  : `${toPersianDigits(overallStats.overallRate)}٪`
-              }
-              hint={monthTitle}
-              colorClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            />
-            <SummaryCard
-              icon={CalendarClock}
-              label="جلسات این ماه"
-              value={`${toPersianDigits(overallStats.sessionsCount)} جلسه`}
-              hint={definition?.title ?? "کلاس"}
-              colorClass="bg-primary/10 text-primary"
-            />
-            <SummaryCard
-              icon={Award}
-              label="حضور ممتاز (≥۹۵٪)"
-              value={`${toPersianDigits(overallStats.perfectStudents)} شاگرد`}
-              hint="بدون غیبت غیرموجه"
-              colorClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
-            />
-            <SummaryCard
-              icon={Users}
-              label="تعداد دانش‌آموزان"
-              value={`${toPersianDigits(overallStats.studentsCount)} نفر`}
-              hint={`${toPersianDigits(overallStats.atRiskStudents)} نفر نیاز به پیگیری`}
-              colorClass="bg-sky-500/10 text-sky-600 dark:text-sky-400"
-            />
+          {/* کارت‌های خلاصه آمار بالای صفحه: اسکرول افقی در موبایل و گرید ۴ ستونه در دسکتاپ */}
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-none sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
+            <div className="min-w-[14.5rem] flex-1 snap-center sm:min-w-0">
+              <SummaryCard
+                icon={Percent}
+                label="میانگین حضور کلاس"
+                value={
+                  overallStats.overallRate === null
+                    ? "—"
+                    : `${toPersianDigits(overallStats.overallRate)}٪`
+                }
+                hint={monthTitle}
+                colorClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              />
+            </div>
+            <div className="min-w-[14.5rem] flex-1 snap-center sm:min-w-0">
+              <SummaryCard
+                icon={CalendarClock}
+                label="جلسات این ماه"
+                value={`${toPersianDigits(overallStats.sessionsCount)} جلسه`}
+                hint={definition?.title ?? "کلاس"}
+                colorClass="bg-primary/10 text-primary"
+              />
+            </div>
+            <div className="min-w-[14.5rem] flex-1 snap-center sm:min-w-0">
+              <SummaryCard
+                icon={Award}
+                label="حضور ممتاز (≥۹۵٪)"
+                value={`${toPersianDigits(overallStats.perfectStudents)} شاگرد`}
+                hint="بدون غیبت غیرموجه"
+                colorClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              />
+            </div>
+            <div className="min-w-[14.5rem] flex-1 snap-center sm:min-w-0">
+              <SummaryCard
+                icon={Users}
+                label="تعداد دانش‌آموزان"
+                value={`${toPersianDigits(overallStats.studentsCount)} نفر`}
+                hint={`${toPersianDigits(overallStats.atRiskStudents)} نفر نیاز به پیگیری`}
+                colorClass="bg-sky-500/10 text-sky-600 dark:text-sky-400"
+              />
+            </div>
           </div>
 
           {/* راهنمای آیکون‌ها و جستجو */}
@@ -458,211 +470,34 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          {/* ماتریس شاگرد × جلسه */}
-          <Card className="overflow-hidden border-border/80">
-            {definition && definition.students.length === 0 ? (
-              <CardContent className="py-14 text-center">
-                <p className="text-sm font-semibold">این کلاس هیچ شاگردی ندارد</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  برای شروع حضور و غیاب ابتدا در ویرایش کلاس، نام شاگردان را وارد کنید.
-                </p>
-              </CardContent>
-            ) : sessions.length === 0 ? (
-              <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-                <CalendarDays className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-                <p className="text-sm font-semibold">
-                  در {monthTitle} جلسه‌ای برای «{definition?.title}» ثبت نشده است
-                </p>
-                <p className="max-w-sm text-xs text-muted-foreground">
-                  می‌توانید برای این ماه جلسه جدیدی ثبت کنید تا ماتریس حضور نمایش داده شود.
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setCreateSessionOpen(true)}
-                  className="gap-1.5"
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                  ثبت جلسه در این ماه
-                </Button>
-              </CardContent>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-end text-xs">
-                  <thead>
-                    <tr className="border-b bg-muted/40 text-muted-foreground">
-                      <th className="sticky start-0 z-10 w-12 bg-muted/90 p-3 text-center font-bold backdrop-blur-sm">
-                        #
-                      </th>
-                      <th className="sticky start-12 z-10 min-w-[10rem] bg-muted/90 p-3 text-start font-bold backdrop-blur-sm">
-                        نام شاگرد
-                      </th>
-                      <th className="min-w-[6.5rem] p-3 text-center font-bold">
-                        درصد حضور
-                      </th>
-                      <th className="min-w-[6rem] p-3 text-center font-bold">
-                        خلاصه ماه
-                      </th>
-
-                      {/* ستون‌های جلسات */}
-                      {sessions.map((session) => {
-                        const parsedDate = parseJalaliDate(session.date)
-                        const shortDate = formatJalaliShortDate(parsedDate)
-                        const wName = weekdayName(parsedDate)
-
-                        // شمارش حاضرین این جلسه
-                        let presentInSession = 0
-                        for (const student of definition?.students ?? []) {
-                          const st = attendanceMap.get(`${session.id}_${student.id}`)
-                          if (st === "present" || st === "late") presentInSession++
-                        }
-
-                        return (
-                          <th
-                            key={session.id}
-                            className="min-w-[6.5rem] border-s p-2 text-center font-normal transition-colors hover:bg-muted/60"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setActiveSession(session)}
-                              className="group flex w-full flex-col items-center gap-1 text-center"
-                              title="کلیک برای باز کردن برگه حضور این جلسه"
-                            >
-                              <span className="text-[11px] font-bold text-foreground">
-                                {shortDate}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {wName} · {formatClock(session.start)}
-                              </span>
-                              <span
-                                className={cn(
-                                  "rounded-full px-1.5 py-0.2 text-[9px] font-medium border",
-                                  session.status === "held"
-                                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
-                                    : session.status === "canceled"
-                                    ? "border-destructive/30 bg-destructive/10 text-destructive line-through"
-                                    : "border-primary/30 bg-primary/10 text-primary",
-                                )}
-                              >
-                                {SESSION_STATUS_LABELS[session.status]}
-                              </span>
-                              <span className="flex items-center gap-0.5 text-[10px] font-semibold text-primary opacity-80 group-hover:opacity-100">
-                                {toPersianDigits(presentInSession)}/{toPersianDigits(definition?.students.length ?? 0)} حاضر
-                              </span>
-                            </button>
-                          </th>
-                        )
-                      })}
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-border/60">
-                    {students.map((student, index) => {
-                      const stats = studentStats.get(student.id)
-                      const rate = stats?.rate ?? null
-
-                      return (
-                        <tr
-                          key={student.id}
-                          className="transition-colors hover:bg-muted/20"
-                        >
-                          <td className="sticky start-0 z-10 bg-card p-3 text-center font-medium text-muted-foreground tabular-nums">
-                            {toPersianDigits(index + 1)}
-                          </td>
-                          <td className="sticky start-12 z-10 bg-card p-3 font-semibold text-start">
-                            {student.name}
-                          </td>
-                          <td className="p-3 text-center">
-                            <span
-                              className={cn(
-                                "inline-block rounded-md border px-2 py-0.5 text-xs font-bold tabular-nums",
-                                getRateBadgeClass(rate),
-                              )}
-                            >
-                              {rate !== null ? `${toPersianDigits(rate)}٪` : "—"}
-                            </span>
-                          </td>
-                          <td className="p-3 text-center text-[11px] text-muted-foreground tabular-nums">
-                            {toPersianDigits(stats?.present ?? 0)} از{" "}
-                            {toPersianDigits(stats?.recordedTotal ?? 0)}
-                          </td>
-
-                          {/* خانه‌های ماتریس */}
-                          {sessions.map((session) => {
-                            const cellKey = `${session.id}_${student.id}`
-                            const statusKey: ExtendedAttendanceStatus =
-                              attendanceMap.get(cellKey) ?? "unrecorded"
-                            const config = ATTENDANCE_CONFIGS[statusKey]
-                            const Icon = config.icon
-                            const isBusy = updatingCell === cellKey
-
-                            return (
-                              <td
-                                key={session.id}
-                                className="border-s p-1.5 text-center"
-                              >
-                                <motion.button
-                                  type="button"
-                                  disabled={isBusy}
-                                  whileTap={{ scale: 0.88 }}
-                                  whileHover={{ scale: 1.08 }}
-                                  onClick={() =>
-                                    handleCellClick(session.id, student.id)
-                                  }
-                                  className={cn(
-                                    "inline-flex h-8 w-full max-w-[5.5rem] items-center justify-center gap-1 rounded-lg border text-[11px] font-medium transition-colors",
-                                    config.cellClasses,
-                                  )}
-                                  title={`${student.name} · ${config.label} (کلیک برای تغییر)`}
-                                >
-                                  <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                  <span>{config.shortLabel}</span>
-                                </motion.button>
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-
-                  {/* پاورقی جدول: جمع حاضرین هر جلسه */}
-                  <tfoot>
-                    <tr className="border-t bg-muted/40 font-bold text-muted-foreground">
-                      <td colSpan={2} className="sticky start-0 z-10 bg-muted/90 p-3 text-start backdrop-blur-sm">
-                        جمع حاضرین جلسه
-                      </td>
-                      <td colSpan={2} className="p-3 text-center">
-                        —
-                      </td>
-                      {sessions.map((session) => {
-                        let presentInSession = 0
-                        for (const student of definition?.students ?? []) {
-                          const st = attendanceMap.get(`${session.id}_${student.id}`)
-                          if (st === "present" || st === "late") presentInSession++
-                        }
-                        const totalStudents = definition?.students.length ?? 0
-                        return (
-                          <td key={session.id} className="border-s p-2 text-center text-xs tabular-nums text-foreground">
-                            {toPersianDigits(presentInSession)} از {toPersianDigits(totalStudents)}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-          </Card>
+          {/* ماتریس شاگرد × جلسه با ErrorBoundary */}
+          <ErrorBoundary sectionName="ماتریس حضور و غیاب">
+            <AttendanceMatrix
+              definition={definition}
+              sessions={sessions}
+              students={students}
+              attendanceMap={attendanceMap}
+              studentStats={studentStats}
+              updatingCell={updatingCell}
+              onCellClick={handleCellClick}
+              onOpenSessionAttendance={(session) => setActiveSession(session)}
+              onOpenCreateSession={() => setCreateSessionOpen(true)}
+              monthTitle={monthTitle}
+              searchQuery={searchQuery}
+              onClearSearch={() => setSearchQuery("")}
+            />
+          </ErrorBoundary>
         </>
       )}
 
       {/* دیالوگ حضور کامل برای یک جلسه */}
-      <SessionAttendanceDialog
-        session={activeSession}
-        definition={definition}
-        onClose={() => setActiveSession(null)}
-      />
+      {activeSession ? (
+        <SessionAttendanceDialog
+          session={activeSession}
+          definition={definition}
+          onClose={() => setActiveSession(null)}
+        />
+      ) : null}
 
       {/* دیالوگ ساخت جلسه جدید */}
       <SessionFormDialog

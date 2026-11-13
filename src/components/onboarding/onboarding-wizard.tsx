@@ -102,7 +102,7 @@ export function OnboardingWizard() {
         }}
       >
         <DialogContent
-          className="max-h-[92vh] max-w-2xl overflow-y-auto p-0 sm:rounded-2xl"
+          className="max-h-[92vh] max-w-2xl overflow-y-auto p-0 sm:rounded-2xl [&>button:last-child]:hidden"
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           {/* نوار هدر ویزارد */}
@@ -111,7 +111,7 @@ export function OnboardingWizard() {
               type="button"
               onClick={handleSkipPermanently}
               aria-label="بستن و رد کردن راهنما"
-              className="absolute start-4 top-4 rounded-lg p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="absolute start-4 top-4 rounded-lg p-1.5 text-muted-foreground transition duration-150 active:scale-95 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="h-5 w-5" />
             </button>
@@ -330,7 +330,7 @@ export function OnboardingWizard() {
                             type="button"
                             onClick={() => setFontFamily(f.id as AppFont)}
                             className={cn(
-                              "relative flex flex-col items-start rounded-xl border p-3.5 text-start transition",
+                              "relative flex flex-col items-start rounded-xl border p-3.5 text-start transition duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                               isSelected
                                 ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                                 : "border-border hover:border-border/80 hover:bg-muted/40",

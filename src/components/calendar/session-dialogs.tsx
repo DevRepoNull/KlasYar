@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { TimePicker } from "@/components/ui/time-picker"
 import {
   Select,
   SelectContent,
@@ -118,36 +119,34 @@ export function EditSessionDialog({
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <label
-                  htmlFor="edit-session-start"
-                  className="space-y-1.5 text-xs font-medium"
-                >
-                  <span>ساعت شروع</span>
-                  <Input
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="edit-session-start"
+                    className="text-xs font-medium"
+                  >
+                    ساعت شروع
+                  </label>
+                  <TimePicker
                     id="edit-session-start"
-                    type="time"
-                    required
-                    dir="ltr"
                     value={start}
-                    onChange={(event) => setStart(event.target.value)}
-                    className="text-center tabular-nums"
+                    onChange={setStart}
+                    aria-label="ساعت شروع جلسه"
                   />
-                </label>
-                <label
-                  htmlFor="edit-session-end"
-                  className="space-y-1.5 text-xs font-medium"
-                >
-                  <span>ساعت پایان</span>
-                  <Input
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="edit-session-end"
+                    className="text-xs font-medium"
+                  >
+                    ساعت پایان
+                  </label>
+                  <TimePicker
                     id="edit-session-end"
-                    type="time"
-                    required
-                    dir="ltr"
                     value={end}
-                    onChange={(event) => setEnd(event.target.value)}
-                    className="text-center tabular-nums"
+                    onChange={setEnd}
+                    aria-label="ساعت پایان جلسه"
                   />
-                </label>
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -217,7 +216,7 @@ export function EditSessionDialog({
                 >
                   انصراف
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving} className="glow-effect">
                   {saving ? (
                     <>
                       <Loader2 className="animate-spin" aria-hidden="true" />
@@ -595,7 +594,7 @@ export function CreateSessionDialog({
               >
                 انصراف
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving} className="glow-effect">
                 {saving ? (
                   <>
                     <Loader2 className="animate-spin" aria-hidden="true" />

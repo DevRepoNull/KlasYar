@@ -1,0 +1,234 @@
+/* ==========================================================================
+   KlasYar Global Styles
+   - Base HTML: 16px REM root & Smooth Scrolling
+   - Modern Custom Scrollbars (Webkit & Firefox)
+   - Button Micro-interactions (active:scale) & Focus-visible
+   ========================================================================== */
+
+/* 1. Base HTML settings: 16px rem base & mobile viewport adjustments */
+html {
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+  direction: rtl;
+}
+
+/* 2. Custom Scrollbar (Modern, Sleek & Minimal) */
+/* Webkit browsers (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: hsl(var(--primary) / 0.7);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+}
+
+@layer base {
+  /* 3. Button Micro-interactions & Focus-visible */
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.96);
+    transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+}
+
+/* ==========================================================================
+   KlasYar Portals (Jalali Date Picker & Time Picker Popovers)
+   Must always have pointer-events auto to override Radix Dialog body pointer lock
+   ========================================================================== */
+[data-klasyar-portal],
+.klasyar-popover,
+.klasyar-popover * {
+  pointer-events: auto !important;
+}
+
+/* ==========================================================================
+   4. Glassmorphism & Ambient Lighting Styles (Anti-Boring UI)
+   ========================================================================== */
+
+/* Glass Card & Glass Panels with backdrop-blur */
+.glass-card {
+  background: hsl(var(--card) / 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid hsl(var(--border) / 0.7);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass-card {
+  background: hsl(var(--card) / 0.45);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.35);
+}
+
+.glass-panel {
+  background: hsl(var(--card) / 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsl(var(--border) / 0.8);
+}
+
+.dark .glass-panel {
+  background: hsl(var(--card) / 0.6);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Squircle Icon Container */
+.squircle {
+  border-radius: 1.15rem;
+}
+
+/* ==========================================================================
+   5. Aurora (شفق قطبی) Animated Background & Glow Utility (Prompt 28)
+   ========================================================================== */
+
+/* Aurora Animated Blobs with Dynamic Primary Theme Binding */
+.aurora-blob-1 {
+  position: absolute;
+  top: -12%;
+  right: 5%;
+  width: 44rem;
+  height: 44rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.18) 0%, hsl(var(--primary) / 0.05) 45%, transparent 70%);
+  filter: blur(100px);
+  pointer-events: none;
+  will-change: transform;
+  animation: aurora-1 18s ease-in-out infinite alternate;
+}
+
+.aurora-blob-2 {
+  position: absolute;
+  top: 25%;
+  left: -5%;
+  width: 38rem;
+  height: 38rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, hsl(var(--accent-foreground, var(--primary)) / 0.14) 0%, hsl(var(--primary) / 0.04) 50%, transparent 70%);
+  filter: blur(110px);
+  pointer-events: none;
+  will-change: transform;
+  animation: aurora-2 22s ease-in-out infinite alternate;
+}
+
+.aurora-blob-3 {
+  position: absolute;
+  bottom: 5%;
+  right: 15%;
+  width: 36rem;
+  height: 36rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.12) 0%, transparent 65%);
+  filter: blur(115px);
+  pointer-events: none;
+  will-change: transform;
+  animation: aurora-3 26s ease-in-out infinite alternate;
+}
+
+.aurora-radial-center {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 20%, hsl(var(--primary) / 0.08) 0%, transparent 75%);
+  pointer-events: none;
+  animation: aurora-pulse 12s ease-in-out infinite alternate;
+}
+
+/* ==========================================================================
+   6. Glow Effect (افکت درخشش دکمه‌ها و عناصر کلیدی)
+   ========================================================================== */
+.glow-effect {
+  position: relative;
+  box-shadow: 0 0 16px -2px hsl(var(--primary) / 0.32),
+              0 4px 8px -2px hsl(var(--primary) / 0.18);
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.15s ease,
+              filter 0.2s ease;
+}
+
+.glow-effect:hover {
+  box-shadow: 0 0 26px 2px hsl(var(--primary) / 0.52),
+              0 6px 16px -1px hsl(var(--primary) / 0.28);
+  filter: brightness(1.04);
+}
+
+.glow-effect:focus-visible {
+  box-shadow: 0 0 0 2px hsl(var(--background)),
+              0 0 0 4px hsl(var(--primary)),
+              0 0 26px 4px hsl(var(--primary) / 0.55);
+}
+
+.glow-effect:active {
+  box-shadow: 0 0 10px -2px hsl(var(--primary) / 0.4);
+}
+
+/* افکت درخشش ملایم برای دکمه‌های ثانویه و فشرده */
+.glow-effect-subtle {
+  box-shadow: 0 0 10px -2px hsl(var(--primary) / 0.2);
+  transition: box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.glow-effect-subtle:hover {
+  box-shadow: 0 0 18px 0px hsl(var(--primary) / 0.38);
+  filter: brightness(1.03);
+}
+
+/* رعایت ترجیحات کاربران در کاهش انیمیشن (Accessibility: Prefers-Reduced-Motion) */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob-1,
+  .aurora-blob-2,
+  .aurora-blob-3,
+  .aurora-radial-center {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .glow-effect,
+  .glow-effect-subtle {
+    transition: none !important;
+  }
+}
+

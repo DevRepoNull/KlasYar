@@ -11,6 +11,7 @@ import {
   Loader2,
   Palette,
   RotateCcw,
+  ShieldCheck,
   Sparkles,
   Upload,
 } from "lucide-react"
@@ -22,6 +23,10 @@ import {
   settingsListVariants,
 } from "@/components/settings/settings-section"
 import { ThemeModeSwitch } from "@/components/settings/theme-mode-switch"
+import { ColorThemePicker } from "@/components/settings/color-theme-picker"
+import { AccountProfileTab } from "@/components/settings/account-profile-tab"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { COLOR_THEMES } from "@/lib/color-theme"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -77,6 +82,7 @@ const DURATION_OPTIONS = [30, 45, 60, 75, 90, 120]
 
 export default function SettingsPage() {
   const theme = useSettingsStore((state) => state.theme)
+  const colorTheme = useSettingsStore((state) => state.colorTheme)
   const weekStart = useSettingsStore((state) => state.weekStart)
   const defaultSessionDuration = useSettingsStore(
     (state) => state.defaultSessionDuration,
@@ -222,22 +228,65 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+      <div
+        className="flex flex-col items-center justify-center text-center w-full space-y-2 mx-auto"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          width: "100%",
+        }}
+      >
+        <h1
+          className="text-2xl font-black tracking-tight sm:text-3xl text-center w-full"
+          style={{
+            textAlign: "center",
+            alignSelf: "center",
+            margin: "0 auto",
+          }}
+        >
           تنظیمات
         </h1>
-        <p className="text-sm leading-6 text-muted-foreground">
+        <p
+          className="text-sm leading-6 text-muted-foreground text-center max-w-xl mx-auto w-full"
+          style={{
+            textAlign: "center",
+            alignSelf: "center",
+            margin: "0 auto",
+          }}
+        >
           ترجیحات کلاس‌یار فقط روی همین دستگاه ذخیره می‌شود و تغییرها فوری اعمال
           می‌شوند.
         </p>
       </div>
 
-        <motion.div
-          variants={settingsListVariants}
-          initial="hidden"
-          animate="show"
-          className="space-y-4"
-        >
+      <Tabs defaultValue="general" className="w-full space-y-6">
+        <TabsList className="grid w-full grid-cols-2 h-12 items-center rounded-2xl bg-muted/60 p-1.5 border border-border/50 gap-1.5">
+          <TabsTrigger
+            value="general"
+            className="flex h-full items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border data-[state=active]:border-primary/40 focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <Palette className="h-4 w-4 text-primary" />
+            <span>تنظیمات عمومی</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="account"
+            className="flex h-full items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border data-[state=active]:border-primary/40 focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <span>حساب کاربری</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="mt-0 space-y-8">
+          <motion.div
+            variants={settingsListVariants}
+            initial="hidden"
+            animate="show"
+            className="space-y-6 sm:space-y-8"
+          >
           <SettingsSection
             icon={Palette}
             title="ظاهر"
@@ -248,6 +297,18 @@ export default function SettingsPage() {
               description={themeDescription}
               control={<ThemeModeSwitch />}
             />
+            {/* پالت رنگی داینامیک برنامه */}
+            <div className="space-y-3.5 p-4 sm:p-5 border-t border-border/60">
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">
+                  پالت رنگی برنامه
+                </label>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  رنگ اصلی، دکمه‌ها، نشانگرها و افکت‌های بصری کل پنل بر اساس پالت انتخابی تغییر می‌کنند.
+                </p>
+              </div>
+              <ColorThemePicker />
+            </div>
             <SettingRow
               label="فونت برنامه"
               description={
@@ -467,13 +528,15 @@ export default function SettingsPage() {
             description="پشتیبان‌گیری کامل دیتابیس (JSON)، بازیابی، و مدیریت ترجیحات."
           >
             {isBackupOverdue(lastBackupAt) && (
-              <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs leading-6 text-amber-900 dark:text-amber-200">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                <div>
-                  <span className="font-bold">یادآوری پشتیبان‌گیری: </span>
-                  {lastBackupAt
-                    ? "بیش از ۷ روز از آخرین نسخه پشتیبان شما می‌گذرد. برای جلوگیری از هدر رفت اطلاعات، توصیه می‌شود نسخه پشتیبان جدید تهیه فرمایید."
-                    : "تاکنون نسخه پشتیبان از داده‌های خود تهیه نکرده‌اید. توصیه می‌شود جهت جلوگیری از دست رفتن اطلاعات، همین حالا یک بکاپ کامل بگیرید."}
+              <div className="p-4 sm:p-5">
+                <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs leading-6 text-amber-900 dark:text-amber-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <span className="font-bold">یادآوری پشتیبان‌گیری: </span>
+                    {lastBackupAt
+                      ? "بیش از ۷ روز از آخرین نسخه پشتیبان شما می‌گذرد. برای جلوگیری از هدر رفت اطلاعات، توصیه می‌شود نسخه پشتیبان جدید تهیه فرمایید."
+                      : "تاکنون نسخه پشتیبان از داده‌های خود تهیه نکرده‌اید. توصیه می‌شود جهت جلوگیری از دست رفتن اطلاعات، همین حالا یک بکاپ کامل بگیرید."}
+                  </div>
                 </div>
               </div>
             )}
@@ -613,9 +676,15 @@ export default function SettingsPage() {
             />
           </SettingsSection>
         </motion.div>
+      </TabsContent>
+
+      <TabsContent value="account" className="mt-0">
+        <AccountProfileTab />
+      </TabsContent>
+    </Tabs>
 
       <p className="text-center text-xs text-muted-foreground">
-        تم فعلی: {THEME_LABELS[theme]} · قلم: {fontFamily === "vazirmatn" ? "وزیرمتن" : "سیستم"} · ذخیره‌سازی: IndexedDB
+        تم فعلی: {THEME_LABELS[theme]} · پالت رنگی: {COLOR_THEMES.find((t) => t.id === colorTheme)?.label ?? "زمرد"} · قلم: {fontFamily === "vazirmatn" ? "وزیرمتن" : "سیستم"} · ذخیره‌سازی: IndexedDB
       </p>
 
       <RestoreBackupDialog

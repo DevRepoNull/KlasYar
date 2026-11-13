@@ -32,7 +32,7 @@ export function ThemeModeSwitch() {
             aria-checked={active}
             onClick={() => setTheme(value)}
             className={cn(
-              "relative flex items-center justify-center rounded-lg px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "relative flex items-center justify-center rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground",

@@ -1,6 +1,6 @@
 {
   "name": "klasyar",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "description": "دستیار هوشمند و آفلاین مدیریت کلاس، جلسات آموزشی، حضور و غیاب و تقویم شمسی",
   "author": "Arian Moslehi",
@@ -50,6 +50,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0",
     "zustand": "^5.1.0"
   },
   "devDependencies": {

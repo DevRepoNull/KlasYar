@@ -43,12 +43,6 @@ export function buildMonthReportData(
   )
 
   const sessionItems: ReportSessionItem[] = []
-  let totalMinutes = 0
-  let heldSessions = 0
-  let scheduledSessions = 0
-  let canceledSessions = 0
-  let allPresent = 0
-  let allEvaluated = 0
 
   for (const session of sortedSessions) {
     const classDef = classMap.get(session.definitionId)
@@ -61,15 +55,6 @@ export function buildMonthReportData(
       session.end,
     )
     const durationHours = Math.round((durationMinutes / 60) * 10) / 10
-
-    if (session.status === "held") heldSessions++
-    else if (session.status === "scheduled") scheduledSessions++
-    else if (session.status === "canceled") canceledSessions++
-
-    // جلسات لغوشده در جمع ساعت محاسبه نمی‌شوند
-    if (session.status !== "canceled") {
-      totalMinutes += durationMinutes
-    }
 
     // محاسبه حضور و غیاب این جلسه
     let presentCount = 0
@@ -87,18 +72,12 @@ export function buildMonthReportData(
       else unrecordedCount++
     }
 
-    const recordedTotal = presentCount + lateCount + excusedCount + absentCount
     const rate = calculateAttendancePercentage(
       presentCount,
       lateCount,
       excusedCount,
       absentCount,
     )
-
-    if (session.status !== "canceled") {
-      allPresent += presentCount + lateCount
-      allEvaluated += recordedTotal
-    }
 
     const jDate = parseJalaliDate(session.date)
 
@@ -129,17 +108,134 @@ export function buildMonthReportData(
     })
   }
 
-  // جمع‌بندی به تفکیک کلاس
-  const classSummaries: ClassReportSummary[] = []
+  const classSummaries = calculateFilteredClassSummaries(sessionItems, classDefs)
+  const summary = calculateFilteredReportSummary(sessionItems)
+
+  return {
+    year,
+    month,
+    monthTitle,
+    monthKey,
+    sessions: sessionItems,
+    classSummaries,
+    summary,
+  }
+}
+
+/**
+ * فیلتر کردن پیشرفته لیست جلسات گزارش بر اساس کلاس، بازه تاریخ، و متن جستجو
+ */
+export function filterReportSessions(
+  sessions: ReportSessionItem[],
+  filters: {
+    selectedClassId?: string
+    dateRange?: { from?: string; to?: string }
+    searchQuery?: string
+  },
+): ReportSessionItem[] {
+  const selectedClassId = filters.selectedClassId ?? "all"
+  const q = filters.searchQuery?.trim().toLowerCase() ?? ""
+  const rawFrom = filters.dateRange?.from?.trim() ?? ""
+  const rawTo = filters.dateRange?.to?.trim() ?? ""
+
+  // عادی‌سازی بازه تاریخ در صورت جابجایی احتمالی ابتدا و انتها
+  const normalizedFrom = rawFrom && rawTo && rawFrom > rawTo ? rawTo : rawFrom
+  const normalizedTo = rawFrom && rawTo && rawFrom > rawTo ? rawFrom : rawTo
+
+  return sessions.filter((item) => {
+    // ۱. فیلتر کلاس
+    if (selectedClassId !== "all" && item.session.definitionId !== selectedClassId) {
+      return false
+    }
+
+    // ۲. فیلتر بازه تاریخ شمسی (از تاریخ)
+    if (normalizedFrom && item.dateStr < normalizedFrom) {
+      return false
+    }
+
+    // ۳. فیلتر بازه تاریخ شمسی (تا تاریخ)
+    if (normalizedTo && item.dateStr > normalizedTo) {
+      return false
+    }
+
+    // ۴. فیلتر جستجوی متنی
+    if (q) {
+      const match =
+        item.classTitle.toLowerCase().includes(q) ||
+        item.dateStr.includes(q) ||
+        item.weekday.includes(q) ||
+        item.note.toLowerCase().includes(q)
+      if (!match) return false
+    }
+
+    return true
+  })
+}
+
+/**
+ * محاسبه شاخص‌های کلی گزارش بر اساس جلسات (فیلترشده یا کامل)
+ */
+export function calculateFilteredReportSummary(
+  sessions: ReportSessionItem[],
+): MonthReportData["summary"] {
+  let totalMinutes = 0
+  let heldSessions = 0
+  let scheduledSessions = 0
+  let canceledSessions = 0
+  let allPresent = 0
+  let allEvaluated = 0
+
+  for (const item of sessions) {
+    if (item.status === "held") heldSessions++
+    else if (item.status === "scheduled") scheduledSessions++
+    else if (item.status === "canceled") canceledSessions++
+
+    // جلسات لغوشده در جمع ساعت و آمار حضور محاسبه نمی‌شوند
+    if (item.status !== "canceled") {
+      totalMinutes += item.durationMinutes
+      const recorded =
+        item.attendance.presentCount +
+        item.attendance.lateCount +
+        item.attendance.excusedCount +
+        item.attendance.absentCount
+      allPresent += item.attendance.presentCount + item.attendance.lateCount
+      allEvaluated += recorded
+    }
+  }
+
+  const overallAttendanceRate =
+    allEvaluated > 0 ? Math.round((allPresent / allEvaluated) * 100) : null
+
+  return {
+    totalMinutes,
+    totalHours: Math.round((totalMinutes / 60) * 10) / 10,
+    totalSessions: sessions.length,
+    heldSessions,
+    scheduledSessions,
+    canceledSessions,
+    overallAttendanceRate,
+  }
+}
+
+/**
+ * محاسبه جمع‌بندی به تفکیک کلاس‌ها بر اساس جلسات (فیلترشده یا کامل)
+ */
+export function calculateFilteredClassSummaries(
+  sessions: ReportSessionItem[],
+  classDefs: ClassDefinition[],
+): ClassReportSummary[] {
+  const summaries: ClassReportSummary[] = []
+  const classIds = new Set(sessions.map((s) => s.session.definitionId))
+
   for (const def of classDefs) {
-    const classSessions = sessionItems.filter(
+    if (!classIds.has(def.id)) continue
+
+    const classSessions = sessions.filter(
       (item) => item.session.definitionId === def.id,
     )
     if (classSessions.length === 0) continue
 
-    const activeSessions = classSessions.filter(
-      (item) => item.status !== "canceled",
-    )
+    const activeSessions = classSessions.filter((item) => item.status !== "canceled")
     const classMinutes = activeSessions.reduce(
       (sum, item) => sum + item.durationMinutes,
       0,
@@ -158,7 +254,7 @@ export function buildMonthReportData(
     }
     const cRate = cEvaluated > 0 ? Math.round((cPresent / cEvaluated) * 100) : null
 
-    classSummaries.push({
+    summaries.push({
       classId: def.id,
       classTitle: def.title,
       classColor: def.color,
@@ -171,24 +267,5 @@ export function buildMonthReportData(
     })
   }
 
-  const overallAttendanceRate =
-    allEvaluated > 0 ? Math.round((allPresent / allEvaluated) * 100) : null
-
-  return {
-    year,
-    month,
-    monthTitle,
-    monthKey,
-    sessions: sessionItems,
-    classSummaries,
-    summary: {
-      totalMinutes,
-      totalHours: Math.round((totalMinutes / 60) * 10) / 10,
-      totalSessions: sortedSessions.length,
-      heldSessions,
-      scheduledSessions,
-      canceledSessions,
-      overallAttendanceRate,
-    },
-  }
+  return summaries
 }

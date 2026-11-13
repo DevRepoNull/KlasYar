@@ -46,7 +46,8 @@ export function ClassCard({ definition, onEdit, onDelete }: ClassCardProps) {
   return (
     <motion.article
       variants={prefersReducedMotion ? undefined : classCardVariants}
-      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      whileHover={prefersReducedMotion ? undefined : { y: -4, transition: { duration: 0.18, ease: "easeOut" } }}
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/75 backdrop-blur-xl shadow-sm transition-all duration-200 hover:border-border hover:shadow-lg hover:shadow-primary/5 dark:bg-card/45 dark:border-white/10 dark:hover:border-white/25"
       aria-labelledby={`class-title-${definition.id}`}
     >
       <span

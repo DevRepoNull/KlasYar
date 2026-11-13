@@ -22,7 +22,12 @@
   color: hsl(var(--foreground));
 }
 
-.klasyar-calendar .fc-theme-standard .fc-scrollgrid,
+.klasyar-calendar .fc-theme-standard .fc-scrollgrid {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.75);
+}
+
 .klasyar-calendar .fc-theme-standard td,
 .klasyar-calendar .fc-theme-standard th {
   border-color: hsl(var(--border) / 0.75);
@@ -41,7 +46,7 @@
 }
 
 .klasyar-calendar .fc-daygrid-day-frame {
-  min-height: 6.5rem;
+  min-height: 5.25rem;
 }
 
 .klasyar-calendar .fc-daygrid-day-top {

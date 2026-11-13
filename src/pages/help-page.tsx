@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  ArrowRight,
+  ArrowLeft,
   BarChart3,
   BookOpen,
   Calendar,
@@ -34,6 +34,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { navigate } from "@/lib/router"
+import { toPersianDigits } from "@/lib/jalali"
 import { cn } from "@/lib/utils"
 import { useSettingsStore } from "@/store/settingsStore"
 
@@ -102,13 +103,180 @@ const FAQ_LIST: FaqItem[] = [
   },
 ]
 
+interface HelpSearchItem {
+  id: string
+  tab: string
+  title: string
+  category: string
+  description: string
+  tags: string[]
+  actionRoute?: string
+  actionLabel?: string
+}
+
+const HELP_SEARCH_INDEX: HelpSearchItem[] = [
+  {
+    id: "step-1",
+    tab: "quick-start",
+    title: "گام اول: تعریف کلاس",
+    category: "شروع سریع",
+    description: "پایه‌ریزی برنامه‌ریزی هفتگی، تعیین رنگ متمایز، روزهای برگزاری و فهرست اسامی شاگردان.",
+    tags: ["گام", "کلاس", "شروع", "رنگ", "شاگردان", "تعریف کلاس", "پایه"],
+    actionRoute: "/classes",
+    actionLabel: "ورود به مدیریت کلاس‌ها",
+  },
+  {
+    id: "step-2",
+    tab: "quick-start",
+    title: "گام دوم: ثبت جلسه",
+    category: "شروع سریع",
+    description: "برنامه‌ریزی و ثبت جلسات تقویم، ساعت شروع و پایان، مبحث تدریس و محاسبه خودکار زمان.",
+    tags: ["گام", "جلسه", "تقویم", "ثبت", "ساعت", "شروع", "پایان", "زمان"],
+    actionRoute: "/",
+    actionLabel: "مشاهده تقویم و ثبت جلسه",
+  },
+  {
+    id: "step-3",
+    tab: "quick-start",
+    title: "گام سوم: دریافت خروجی",
+    category: "شروع سریع",
+    description: "گزارش رسمی برای تسویه‌حساب و آرشیو، دریافت نسخه چاپی PDF، فایل اکسل فرمول‌دار یا ورد.",
+    tags: ["گام", "خروجی", "اکسل", "pdf", "پی دی اف", "ورد", "گزارش", "تسویه"],
+    actionRoute: "/reports",
+    actionLabel: "ورود به صفحه گزارش‌ها",
+  },
+  {
+    id: "work-calc",
+    tab: "work-hours",
+    title: "محاسبه دقیق مدت و ساعات کاری تدریس",
+    category: "ثبت ساعت کاری",
+    description: "فرمول محاسبه سیستمی کارکرد: دقیقه پایان منهای دقیقه شروع و تبدیل خودکار به ساعت.",
+    tags: ["ساعت", "محاسبه", "کارکرد", "فرمول", "مدت", "دقیقه", "حق‌التدریس", "ثبت ساعت"],
+  },
+  {
+    id: "session-status",
+    tab: "work-hours",
+    title: "وضعیت‌های جلسات تدریس (برگزار شد، برنامه‌ریزی، لغو)",
+    category: "ثبت ساعت کاری",
+    description: "تعیین وضعیت جلسات و تأثیر در کارکرد (تنها جلسات برگزارشده در تسویه حساب لحاظ می‌گردند).",
+    tags: ["وضعیت", "برگزار شد", "لغو", "برنامه‌ریزی", "جلسه"],
+  },
+  {
+    id: "attendance-statuses",
+    tab: "attendance",
+    title: "وضعیت‌های چهارگانه حضور و غیاب (حاضر، غایب، تأخیر، مرخصی)",
+    category: "حضور و غیاب",
+    description: "ثبت وضعیت حضور، ثبت دقیق دقایق تأخیر شاگردان و محاسبه درصد حضور کلاسی.",
+    tags: ["حضور و غیاب", "حاضر", "غایب", "تاخیر", "مرخصی", "شاگرد", "غیبت"],
+  },
+  {
+    id: "attendance-grading",
+    tab: "attendance",
+    title: "ارزشیابی کلاسی، نمرات و یادداشت‌ها",
+    category: "حضور و غیاب",
+    description: "ثبت نمره درسی از ۲۰ یا ۱۰۰ و یادداشت‌های ارزیابی عملکرد برای هر دانش‌آموز در هر جلسه.",
+    tags: ["نمره", "ارزشیابی", "یادداشت", "دانش‌آموز", "شاگرد"],
+  },
+  {
+    id: "export-pdf",
+    tab: "exports",
+    title: "خروجی PDF (گزارش رسمی و سربرگ‌دار)",
+    category: "خروجی‌ها",
+    description: "گزارش چاپی استاندارد و رسمی با سربرگ، تاریخ شمسی، جدول جلسات و محل امضا جهت تسویه حساب.",
+    tags: ["pdf", "پی دی اف", "خروجی", "چاپ", "سربرگ", "امضا", "رسمی"],
+    actionRoute: "/reports",
+    actionLabel: "دریافت خروجی PDF در گزارش‌ها",
+  },
+  {
+    id: "export-excel",
+    tab: "exports",
+    title: "خروجی اکسل فرمول‌دار (Excel .xlsx)",
+    category: "خروجی‌ها",
+    description: "فایل اکسل با فرمول‌های SUM و تجمیع ساعات تدریس و نرخ حق‌التدریس جهت محاسبات مالی.",
+    tags: ["اکسل", "excel", "xlsx", "فرمول", "محاسبه", "حق التدریس", "خروجی"],
+    actionRoute: "/reports",
+    actionLabel: "دریافت خروجی اکسل در گزارش‌ها",
+  },
+  {
+    id: "export-word",
+    tab: "exports",
+    title: "خروجی فایل ورد قابل ویرایش (Word .docx)",
+    category: "خروجی‌ها",
+    description: "فایل تایپ‌شده ورد با جدول‌بندی تمیز جهت تغییرات دلخواه متنی در نرم‌افزار Word.",
+    tags: ["ورد", "word", "docx", "ویرایش", "خروجی"],
+    actionRoute: "/reports",
+    actionLabel: "دریافت خروجی ورد در گزارش‌ها",
+  },
+  {
+    id: "backup-create",
+    tab: "backup",
+    title: "پشتیبان‌گیری کامل از داده‌ها (JSON)",
+    category: "بکاپ و بازیابی",
+    description: "دانلود تمام داده‌های کلاس‌ها، جلسات و تنظیمات در یک فایل بدون نیاز به اینترنت.",
+    tags: ["بکاپ", "پشتیبان", "دانلود", "json", "ذخیره", "امنیت"],
+    actionRoute: "/settings",
+    actionLabel: "رفتن به صفحه بکاپ در تنظیمات",
+  },
+  {
+    id: "backup-restore",
+    tab: "backup",
+    title: "بازیابی اطلاعات و انتقال به دستگاه دیگر",
+    category: "بکاپ و بازیابی",
+    description: "امکان جایگزینی یا ادغام اطلاعات با آپلود فایل پشتیبان در دستگاه جدید.",
+    tags: ["بازیابی", "انتقال", "ریستور", "فایل", "دستگاه"],
+    actionRoute: "/settings",
+    actionLabel: "بازیابی فایل در تنظیمات",
+  },
+  {
+    id: "settings-theme",
+    tab: "settings",
+    title: "تنظیمات ظاهر و پالت‌های رنگی",
+    category: "راهنمای تنظیمات",
+    description: "تغییر تم تیره و روشن و انتخاب پالت‌های رنگی متنوع زمرد، نیمه‌شب، غروب و تک‌رنگ.",
+    tags: ["تم", "رنگ", "پالت", "تاریک", "روشن", "ظاهر", "زمرد", "غروب"],
+    actionRoute: "/settings",
+    actionLabel: "تنظیمات تم و پالت رنگی",
+  },
+  {
+    id: "settings-font",
+    tab: "settings",
+    title: "انتخاب قلم و فونت فارسی (وزیرمتن)",
+    category: "راهنمای تنظیمات",
+    description: "بهینه‌سازی خوانایی حروف و ارقام فارسی با فونت استاندارد وزیرمتن.",
+    tags: ["فونت", "قلم", "وزیرمتن", "خوانایی", "ارقام"],
+    actionRoute: "/settings",
+    actionLabel: "تنظیم فونت برنامه",
+  },
+  ...FAQ_LIST.map((faq, idx) => ({
+    id: `faq-${idx}`,
+    tab: "faq",
+    title: faq.question,
+    category: "سوالات متداول",
+    description: faq.answer,
+    tags: ["سوال", "faq", ...faq.tags],
+  })),
+]
+
 export default function HelpPage() {
   const [activeTab, setActiveTab] = useState("quick-start")
   const [searchQuery, setSearchQuery] = useState("")
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
   const openOnboarding = useSettingsStore((state) => state.openOnboarding)
 
-  // فیلتر کردن سوالات متداول بر اساس متن جستجو
+  // جستجوی جامع در تمامی مباحث راهنما
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return []
+    return HELP_SEARCH_INDEX.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q) ||
+        item.tags.some((tag) => tag.toLowerCase().includes(q)),
+    )
+  }, [searchQuery])
+
+  // فیلتر کردن سوالات متداول در تب FAQ
   const filteredFaqs = useMemo(() => {
     if (!searchQuery.trim()) return FAQ_LIST
     const q = searchQuery.trim().toLowerCase()
@@ -150,55 +318,145 @@ export default function HelpPage() {
 
         {/* فیلد جستجوی سریع در مستندات */}
         <div className="relative mt-6 max-w-md">
-          <Search className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="جستجو در راهنما (مثلاً: اکسل، بکاپ، حضور و غیاب، فونت...)"
-            className="ps-10 bg-background/80 backdrop-blur-xs"
+            placeholder="جستجو در تمام بخش‌های راهنما (گام‌ها، اکسل، بکاپ...)"
+            className="ps-10 pe-24 h-11 text-xs sm:text-sm bg-background/90 backdrop-blur-xs border-border/80 focus-visible:ring-primary"
+            aria-label="جستجو در راهنما"
           />
-          {searchQuery && (
+          {searchQuery ? (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+              className="absolute end-2.5 top-1/2 -translate-y-1/2 rounded-lg bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground transition-all duration-150 active:scale-95 hover:bg-muted/80 hover:text-foreground"
             >
               پاک کردن
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {/* تب‌های راهنما */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      {/* نمایش نتایج جستجو در صورت تایپ کاربر، یا نمایش تب‌ها در حالت عادی */}
+      {searchQuery.trim() ? (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+            <h2 className="text-base sm:text-lg font-black flex items-center gap-2">
+              <Search className="h-4 w-4 text-primary" />
+              <span>نتایج جستجو برای: «{searchQuery}»</span>
+              <span className="text-xs font-semibold text-primary rounded-full bg-primary/10 px-2.5 py-0.5">
+                {toPersianDigits(searchResults.length)} نتیجه
+              </span>
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchQuery("")}
+              className="text-xs text-muted-foreground hover:text-foreground h-8"
+            >
+              پاک کردن و بازگشت به راهنما
+            </Button>
+          </div>
+
+          {searchResults.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/80 p-10 text-center space-y-3 bg-muted/15">
+              <p className="text-sm font-bold text-foreground">
+                هیچ موردی مطابق با «{searchQuery}» پیدا نشد
+              </p>
+              <p className="text-xs text-muted-foreground leading-6 max-w-md mx-auto">
+                می‌توانید واژه‌های متداولی مانند «گام»، «اکسل»، «بکاپ»، «ساعت کاری»، «حضور و غیاب»، «کلاس» یا «پی‌دی‌اف» را امتحان فرمایید.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSearchQuery("")}
+                className="mt-2 text-xs"
+              >
+                مشاهده همه راهنما
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              {searchResults.map((item) => (
+                <Card
+                  key={item.id}
+                  className="border-border/80 hover:border-primary/50 transition-all hover:shadow-md flex flex-col justify-between"
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">
+                        {item.category}
+                      </span>
+                    </div>
+                    <CardTitle className="text-sm font-bold mt-2">
+                      {item.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-xs leading-6 text-muted-foreground flex-1 flex flex-col justify-between">
+                    <p>{item.description}</p>
+                    <div className="pt-2 flex flex-wrap items-center gap-2 border-t border-border/50">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setActiveTab(item.tab)
+                          setSearchQuery("")
+                        }}
+                        className="text-xs text-primary font-bold hover:bg-primary/10 gap-1 h-8"
+                      >
+                        مشاهده در بخش {item.category}
+                        <ArrowLeft className="h-3 w-3" />
+                      </Button>
+                      {item.actionRoute ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(item.actionRoute!)}
+                          className="text-xs gap-1 h-8 ms-auto"
+                        >
+                          {item.actionLabel || "رفتن به بخش"}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="overflow-x-auto pb-2">
           <TabsList className="inline-flex h-auto w-auto gap-1 bg-muted/60 p-1.5 rounded-2xl">
             <TabsTrigger value="quick-start" className="gap-2 rounded-xl py-2 text-xs sm:text-sm">
-              <Play className="h-4 w-4 text-emerald-500" />
+              <Play className="h-4 w-4 text-primary shrink-0" />
               شروع سریع
             </TabsTrigger>
             <TabsTrigger value="work-hours" className="gap-2 rounded-xl py-2 text-xs sm:text-sm">
-              <Clock className="h-4 w-4 text-amber-500" />
+              <Clock className="h-4 w-4 text-primary shrink-0" />
               ثبت ساعت کاری
             </TabsTrigger>
             <TabsTrigger value="attendance" className="gap-2 rounded-xl py-2 text-xs sm:text-sm">
-              <Users className="h-4 w-4 text-primary" />
+              <Users className="h-4 w-4 text-primary shrink-0" />
               حضور و غیاب
             </TabsTrigger>
             <TabsTrigger value="exports" className="gap-2 rounded-xl py-2 text-xs sm:text-sm">
-              <Download className="h-4 w-4 text-blue-500" />
+              <Download className="h-4 w-4 text-primary shrink-0" />
               خروجی‌ها
             </TabsTrigger>
             <TabsTrigger value="backup" className="gap-2 rounded-xl py-2 text-xs sm:text-sm">
-              <Database className="h-4 w-4 text-purple-500" />
+              <Database className="h-4 w-4 text-primary shrink-0" />
               بکاپ و بازیابی
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2 rounded-xl py-2 text-xs sm:text-sm">
-              <Palette className="h-4 w-4 text-rose-500" />
+              <Palette className="h-4 w-4 text-primary shrink-0" />
               راهنمای تنظیمات
             </TabsTrigger>
             <TabsTrigger value="faq" className="gap-2 rounded-xl py-2 text-xs sm:text-sm">
-              <HelpCircle className="h-4 w-4 text-indigo-500" />
+              <HelpCircle className="h-4 w-4 text-primary shrink-0" />
               سوالات متداول
             </TabsTrigger>
           </TabsList>
@@ -224,7 +482,7 @@ export default function HelpPage() {
               <Card className="relative flex h-full flex-col justify-between overflow-hidden border-border/80 transition-all hover:border-primary/50 hover:shadow-md">
                 <div className="absolute end-4 top-4 text-4xl font-black text-muted/30">۱</div>
                 <CardHeader>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <BookOpen className="h-5 w-5" />
                   </div>
                   <CardTitle className="text-base font-bold">گام اول: تعریف کلاس</CardTitle>
@@ -249,7 +507,7 @@ export default function HelpPage() {
                       className="w-full gap-1.5 text-xs font-semibold"
                     >
                       ورود به مدیریت کلاس‌ها
-                      <ArrowRight className="h-3.5 w-3.5" />
+                      <ArrowLeft className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </CardContent>
@@ -261,7 +519,7 @@ export default function HelpPage() {
               <Card className="relative flex h-full flex-col justify-between overflow-hidden border-border/80 transition-all hover:border-primary/50 hover:shadow-md">
                 <div className="absolute end-4 top-4 text-4xl font-black text-muted/30">۲</div>
                 <CardHeader>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <CalendarCheck className="h-5 w-5" />
                   </div>
                   <CardTitle className="text-base font-bold">گام دوم: ثبت جلسه</CardTitle>
@@ -286,7 +544,7 @@ export default function HelpPage() {
                       className="w-full gap-1.5 text-xs font-semibold"
                     >
                       مشاهده تقویم و ثبت جلسه
-                      <ArrowRight className="h-3.5 w-3.5" />
+                      <ArrowLeft className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </CardContent>
@@ -298,7 +556,7 @@ export default function HelpPage() {
               <Card className="relative flex h-full flex-col justify-between overflow-hidden border-border/80 transition-all hover:border-primary/50 hover:shadow-md">
                 <div className="absolute end-4 top-4 text-4xl font-black text-muted/30">۳</div>
                 <CardHeader>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <BarChart3 className="h-5 w-5" />
                   </div>
                   <CardTitle className="text-base font-bold">گام سوم: دریافت خروجی</CardTitle>
@@ -323,7 +581,7 @@ export default function HelpPage() {
                       className="w-full gap-1.5 text-xs font-semibold"
                     >
                       ورود به صفحه گزارش‌ها
-                      <ArrowRight className="h-3.5 w-3.5" />
+                      <ArrowLeft className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </CardContent>
@@ -532,7 +790,7 @@ export default function HelpPage() {
             <Card className="border-border/80">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
@@ -557,7 +815,7 @@ export default function HelpPage() {
             <Card className="border-border/80">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <FileSpreadsheet className="h-5 w-5" />
                   </div>
                   <div>
@@ -582,7 +840,7 @@ export default function HelpPage() {
             <Card className="border-border/80">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
@@ -606,7 +864,7 @@ export default function HelpPage() {
             <Card className="border-border/80">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <Database className="h-5 w-5" />
                   </div>
                   <div>
@@ -712,7 +970,7 @@ export default function HelpPage() {
             </div>
 
             <div className="p-4 sm:p-5 flex items-start gap-4">
-              <Type className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+              <Type className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <h4 className="text-xs font-bold sm:text-sm">فونت برنامه</h4>
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -722,7 +980,7 @@ export default function HelpPage() {
             </div>
 
             <div className="p-4 sm:p-5 flex items-start gap-4">
-              <Calendar className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <Calendar className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <h4 className="text-xs font-bold sm:text-sm">روز شروع هفته</h4>
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -732,7 +990,7 @@ export default function HelpPage() {
             </div>
 
             <div className="p-4 sm:p-5 flex items-start gap-4">
-              <Clock className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+              <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <h4 className="text-xs font-bold sm:text-sm">مدت پیش‌فرض هر جلسه</h4>
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -742,7 +1000,7 @@ export default function HelpPage() {
             </div>
 
             <div className="p-4 sm:p-5 flex items-start gap-4">
-              <Laptop className="h-5 w-5 text-purple-500 shrink-0 mt-0.5" />
+              <Laptop className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <h4 className="text-xs font-bold sm:text-sm">اعلان‌ها و یادآوری کلاس‌ها</h4>
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -752,7 +1010,7 @@ export default function HelpPage() {
             </div>
 
             <div className="p-4 sm:p-5 flex items-start gap-4">
-              <RotateCcw className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
+              <RotateCcw className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <h4 className="text-xs font-bold sm:text-sm">بازنشانی تنظیمات</h4>
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -789,7 +1047,7 @@ export default function HelpPage() {
                       type="button"
                       onClick={() => setOpenFaqIndex(isOpen ? null : index)}
                       aria-expanded={isOpen}
-                      className="flex w-full items-center justify-between p-4 text-start font-bold text-xs sm:text-sm transition hover:bg-muted/30"
+                      className="flex w-full items-center justify-between p-4 text-start font-bold text-xs sm:text-sm transition-all duration-150 active:scale-[0.99] hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                     >
                       <span className="flex items-center gap-2">
                         <HelpCircle className="h-4 w-4 text-primary shrink-0" />
@@ -824,6 +1082,7 @@ export default function HelpPage() {
           )}
         </TabsContent>
       </Tabs>
+      )}
     </div>
   )
 }

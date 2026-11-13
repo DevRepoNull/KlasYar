@@ -6,7 +6,7 @@ import { DatabaseError, normalizeDatabaseError } from "./errors"
 export const DB_NAME = "klasyar"
 
 /** نسخه فعلی اسکیمای دیتابیس. برای هر تغییر ساختار جداول یک نسخه اضافه کنید. */
-export const DB_VERSION = 1
+export const DB_VERSION = 2
 
 /* -------------------------------------------------------------------------- */
 /*                                   انواع                                    */
@@ -106,6 +106,13 @@ export interface Setting {
   value: unknown
 }
 
+export interface User {
+  id: number
+  username: string
+  passwordHash: string
+  createdAt: string
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                  دیتابیس                                   */
 /* -------------------------------------------------------------------------- */
@@ -115,17 +122,20 @@ export class KlasYarDatabase extends Dexie {
   sessions!: Table<Session, string>
   attendance!: Table<Attendance, string>
   settings!: Table<Setting, string>
+  users!: Table<User, number>
 
   constructor(name: string = DB_NAME) {
     super(name)
 
-    this.version(DB_VERSION).stores({
+    this.version(1).stores({
       classDefinitions: "id, title, createdAt, updatedAt",
       sessions: "id, definitionId, date, [definitionId+date], status",
-      // ایندکس یکتای ترکیبی، ثبت تکراری حضور یک دانش‌آموز در یک جلسه را
-      // در سطح IndexedDB هم مسدود می‌کند.
       attendance: "id, sessionId, studentId, status, &[sessionId+studentId]",
       settings: "key",
+    })
+
+    this.version(2).stores({
+      users: "id, username",
     })
   }
 }

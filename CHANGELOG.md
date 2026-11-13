@@ -17,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-11-14
+
+### Fixed
+- Fixed React Rules of Hooks ordering in `SessionAttendanceDialog` that caused crashes when opening attendance modals on the Sessions page (`/sessions`).
+- Resolved blank screen caching/navigation freeze when switching routes between Settings and Calendar after changing themes.
+- Fixed mouse clickability, event propagation, and pointer-events in Jalali date and time pickers inside modal dialogs.
+- Fixed layout clipping, overflow, and badge borders in PDF reports, Settings navigation buttons, and search input placeholders.
+- Unified brand identity and perfected title typography centering on the initial setup/login screen.
+- Enhanced modal backgrounds with flat, clean, and frosted-glass options without visual clutter.
+
+### Added
+- Direct Solar Hijri (Jalali) month and year selector navigation for both Calendar and Reports pages with full Persian digit formatting.
+- Smooth micro-interactions, responsive touch targets, and resilient error boundaries across all sections.
+
+---
+
 ## [0.1.0] - 2025-11-10
 
 ### Added

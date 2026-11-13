@@ -157,19 +157,34 @@ export function useClassMonthlyAttendance(
     const definition = await db.classDefinitions.get(definitionId)
     if (!definition) return null
 
+    // تضمین اینکه فهرست دانش‌آموزان همیشه آرایه معتبر است
+    if (!Array.isArray(definition.students)) {
+      definition.students = []
+    }
+
     const sessions = await db.sessions
       .where("definitionId")
       .equals(definitionId)
       .toArray()
 
-    const monthSessions = sessions
-      .filter((session) => session.date.startsWith(`${monthKey}-`))
-      .sort(
-        (a, b) =>
-          a.date.localeCompare(b.date) || a.start.localeCompare(b.start),
+    const monthSessions = (sessions ?? [])
+      .filter(
+        (session) =>
+          session &&
+          typeof session.date === "string" &&
+          session.date.startsWith(`${monthKey}-`),
       )
+      .sort((a, b) => {
+        const dateComp = (a.date ?? "").localeCompare(b.date ?? "")
+        if (dateComp !== 0) return dateComp
+        return (a.start ?? "").localeCompare(b.start ?? "")
+      })
 
-    const sessionIds = monthSessions.map((session) => session.id)
+    const sessionIds = monthSessions
+      .map((session) => session.id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+
+    // سابسکرایب به تغییرات جدول attendance در Dexie
     const records =
       sessionIds.length > 0
         ? await db.attendance.where("sessionId").anyOf(sessionIds).toArray()
@@ -178,7 +193,7 @@ export function useClassMonthlyAttendance(
     return {
       definition,
       sessions: monthSessions,
-      attendance: records,
+      attendance: records ?? [],
     }
   }, [definitionId, monthKey])
 }

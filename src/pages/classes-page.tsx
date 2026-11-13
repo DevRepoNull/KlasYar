@@ -56,7 +56,7 @@ export default function ClassesPage() {
           </p>
         </div>
 
-        <Button type="button" onClick={openCreate} className="gap-2">
+        <Button type="button" onClick={openCreate} className="gap-2 glow-effect">
           <Plus aria-hidden="true" />
           کلاس جدید
         </Button>
@@ -85,7 +85,7 @@ export default function ClassesPage() {
               اولین کلاس را با عنوان، رنگ و روزهای هفته بسازید تا در تقویم و
               بخش جلسات دیده شود.
             </p>
-            <Button type="button" onClick={openCreate} className="mt-1 gap-2">
+            <Button type="button" onClick={openCreate} className="mt-1 gap-2 glow-effect">
               <Plus aria-hidden="true" />
               ساخت اولین کلاس
             </Button>
